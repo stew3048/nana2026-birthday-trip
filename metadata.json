@@ -1,0 +1,6 @@
+{
+  "name": "晴寶專屬生日府城假期 · 台南煙波大飯店 3天2夜浪漫手冊",
+  "description": "專為晴寶 10/17 生日精心策劃的 ⭐ 晴寶2026生日專屬之旅 (台南 Tainan)。包含出發前1小時動態解鎖驚喜時刻表、神秘驚喜任務封存、蔡寶專屬訂位管理與花費記帳權限保護、旅行準備清單與Firebase小吃即時投票。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
