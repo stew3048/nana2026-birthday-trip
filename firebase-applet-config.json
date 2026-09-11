@@ -1,12 +1,12 @@
 {
-  "projectId": "molten-bot-2zp2g",
-  "appId": "1:1007052168686:web:b2992f7d9f6dbcd45642ff",
-  "apiKey": "AIzaSyA93OWQ6wWzm40S8_U_FqVetXmI7PwTCAU",
-  "authDomain": "molten-bot-2zp2g.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-trip-74d62d6d-e5de-4e2d-89b3-01ad0d0f7315",
-  "storageBucket": "molten-bot-2zp2g.firebasestorage.app",
-  "messagingSenderId": "1007052168686",
-  "measurementId": "",
-  "oAuthClientId": "1007052168686-rv1hu7an52ofn9jruopouk2v49eielq7.apps.googleusercontent.com",
+  "projectId": "nanachen-2026birthday-tainan",
+  "appId": "1:14053383802:web:4042499dd95ecaeed4a5c3",
+  "apiKey": "AIzaSyBeAEEb0ZQYK9Iobi_a25k4e8mMYKAyh5U",
+  "authDomain": "nanachen-2026birthday-tainan.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "nanachen-2026birthday-tainan.firebasestorage.app",
+  "messagingSenderId": "14053383802",
+  "measurementId": "G-WHEWD1T4E3",
+  "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }

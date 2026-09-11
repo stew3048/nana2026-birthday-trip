@@ -181,9 +181,9 @@ export const AuthProvider: React.FC<{
   const isActualGirlfriend = isLoggedIn && (lowerUserEmail === gfEmail || lowerUserEmail === 'sng828388@gmail.com');
   
   // If boyfriend toggles to girlfriend view, isBoyfriend becomes false so UI reflects exactly what girlfriend sees!
-  const isBoyfriend = isActualBoyfriend && role === 'boyfriend';
-  const isGirlfriend = isActualGirlfriend || (isActualBoyfriend && role === 'girlfriend');
-  const isGuest = !isLoggedIn || (!isActualBoyfriend && !isActualGirlfriend);
+  const isBoyfriend = isActualBoyfriend ? role === 'boyfriend' : (role === 'boyfriend' || (role !== 'girlfriend' && !isActualGirlfriend));
+  const isGirlfriend = isActualGirlfriend || (isActualBoyfriend && role === 'girlfriend') || (!isLoggedIn && role === 'girlfriend');
+  const isGuest = !isLoggedIn && role !== 'boyfriend' && role !== 'girlfriend';
   const isAuthorizedEditor = isActualBoyfriend || isActualGirlfriend;
 
   // Gatekeeper helper

@@ -113,7 +113,8 @@ export function subscribeToTripFromCloud(
           }
         } else {
           // Initialize in Firestore if doesn't exist
-          syncTripToCloud(tainanBirthdayPreset);
+          const localData = loadTripData();
+          syncTripToCloud(localData || tainanBirthdayPreset);
         }
       },
       (err) => {

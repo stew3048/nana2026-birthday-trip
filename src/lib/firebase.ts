@@ -34,8 +34,11 @@ const firebaseConfig = {
 // Initialize Firebase App
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firestore using the specific database ID if available
-export const db = getFirestore(app, firebaseConfigData.firestoreDatabaseId || undefined);
+// Initialize Firestore using the specific database ID if available (omit parameter for default database)
+const customDbId = firebaseConfigData.firestoreDatabaseId && firebaseConfigData.firestoreDatabaseId !== '(default)' 
+  ? firebaseConfigData.firestoreDatabaseId 
+  : undefined;
+export const db = customDbId ? getFirestore(app, customDbId) : getFirestore(app);
 
 // Initialize Firebase Auth
 export const auth = getAuth(app);
@@ -66,10 +69,14 @@ export interface SnackVoteItem {
   category: string; // 'savory' | 'sweet' | 'drink' | 'night_market'
   recommendedSpots: string; // e.g. "六千牛肉湯 / 文章牛肉湯"
   status: 'want' | 'must' | 'maybe' | 'pass'; // 'want' = 晴寶想吃, 'must' = 必吃, 'maybe' = 可吃可不吃, 'pass' = pass
+  girlfriendVote?: 'want' | 'must' | 'maybe' | 'pass' | null; // 晴寶的心願狀態
+  boyfriendVote?: 'want' | 'must' | 'maybe' | 'pass' | null; // 蔡寶的心願狀態
   notes?: string;
   votedBy?: 'qingbao' | 'caibao' | 'both';
   likesCount: number;
   locationArea?: string; // e.g. "中西區 / 安平區"
+  isCustomAdded?: boolean;
+  customAddedBy?: string;
   updatedAt?: string;
 }
 
@@ -80,6 +87,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'savory',
     recommendedSpots: '六千泓佐牛肉湯 / 文章牛肉湯 / 阿村牛肉湯',
     status: 'must',
+    girlfriendVote: 'must',
+    boyfriendVote: 'must',
     votedBy: 'both',
     likesCount: 2,
     locationArea: '中西區 / 安平區',
@@ -91,6 +100,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'savory',
     recommendedSpots: '邱家小卷米粉 / 葉家小卷米粉',
     status: 'want',
+    girlfriendVote: 'want',
+    boyfriendVote: null,
     votedBy: 'qingbao',
     likesCount: 1,
     locationArea: '國華街 中西區',
@@ -102,6 +113,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'savory',
     recommendedSpots: '矮仔成蝦仁飯 / 集品蝦仁飯',
     status: 'want',
+    girlfriendVote: 'want',
+    boyfriendVote: null,
     votedBy: 'qingbao',
     likesCount: 1,
     locationArea: '海安路 中西區',
@@ -113,6 +126,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'savory',
     recommendedSpots: '阿江鱔魚意麵 / 進福炒鱔魚專家',
     status: 'must',
+    girlfriendVote: 'must',
+    boyfriendVote: 'must',
     votedBy: 'both',
     likesCount: 2,
     locationArea: '民族路 中西區',
@@ -124,6 +139,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'sweet',
     recommendedSpots: '林家白糖粿 / 游爸爸蕃薯椪白糖粿',
     status: 'want',
+    girlfriendVote: 'want',
+    boyfriendVote: null,
     votedBy: 'qingbao',
     likesCount: 1,
     locationArea: '國華街商圈',
@@ -135,6 +152,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'sweet',
     recommendedSpots: '紅磚布丁 / 依蕾特布丁 / 銀波布丁',
     status: 'want',
+    girlfriendVote: 'want',
+    boyfriendVote: null,
     votedBy: 'qingbao',
     likesCount: 1,
     locationArea: '安平 / 中西區',
@@ -146,6 +165,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'drink',
     recommendedSpots: '義豐冬瓜茶 (赤崁樓前)',
     status: 'want',
+    girlfriendVote: 'want',
+    boyfriendVote: 'want',
     votedBy: 'both',
     likesCount: 2,
     locationArea: '赤崁樓旁',
@@ -157,6 +178,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'savory',
     recommendedSpots: '富盛號碗粿 / 一味品碗粿',
     status: 'maybe',
+    girlfriendVote: null,
+    boyfriendVote: 'maybe',
     votedBy: 'caibao',
     likesCount: 1,
     locationArea: '永樂市場 國華街',
@@ -168,6 +191,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'sweet',
     recommendedSpots: '莉莉水果店 / 裕成水果行',
     status: 'want',
+    girlfriendVote: 'want',
+    boyfriendVote: null,
     votedBy: 'qingbao',
     likesCount: 1,
     locationArea: '孔廟對面',
@@ -179,6 +204,8 @@ export const DEFAULT_TAINAN_SNACKS: SnackVoteItem[] = [
     category: 'savory',
     recommendedSpots: '阿松割包',
     status: 'maybe',
+    girlfriendVote: null,
+    boyfriendVote: 'maybe',
     votedBy: 'caibao',
     likesCount: 1,
     locationArea: '永樂市場',

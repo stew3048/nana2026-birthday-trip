@@ -107,6 +107,16 @@ export interface LoveLetter {
   musicAutoPlay?: boolean;
 }
 
+export interface DayHighlightCard {
+  dayNumber: number;
+  dateBadge: string; // e.g. "Day 1 · 10/16 (五)"
+  title: string;
+  description: string;
+  tag1?: string;
+  tag2?: string;
+  isSecretSurprise?: boolean;
+}
+
 export interface TripSettings {
   id: string;
   tripTitle: string; // e.g. "⭐ 晴寶2026生日專屬之旅"
@@ -121,6 +131,8 @@ export interface TripSettings {
   customNotes?: string;
   boyfriendEmail?: string; // e.g. "stew3048@gmail.com"
   girlfriendEmail?: string;
+  dayHighlights?: DayHighlightCard[];
+  hiddenScenarioIds?: string[];
 }
 
 export interface SnackVoteItem {
@@ -128,11 +140,15 @@ export interface SnackVoteItem {
   name: string;
   category: string; // 'savory' | 'sweet' | 'drink' | 'night_market'
   recommendedSpots: string; // e.g. "六千牛肉湯 / 文章牛肉湯"
-  status: 'want' | 'must' | 'maybe' | 'pass'; // 'want' = 晴寶想吃, 'must' = 必吃, 'maybe' = 可吃可不吃, 'pass' = pass
+  status: 'want' | 'must' | 'maybe' | 'pass'; // 總體心願狀態 (若兩人皆想吃/必吃則為 must/want，且雙向指定)
+  girlfriendVote?: 'want' | 'must' | 'maybe' | 'pass' | null; // 晴寶的心願狀態
+  boyfriendVote?: 'want' | 'must' | 'maybe' | 'pass' | null; // 蔡寶的心願狀態
   notes?: string;
   votedBy?: 'qingbao' | 'caibao' | 'both';
   likesCount: number;
   locationArea?: string; // e.g. "中西區 / 安平區"
+  isCustomAdded?: boolean;
+  customAddedBy?: string;
   updatedAt?: string;
 }
 
@@ -148,6 +164,19 @@ export interface LiveAlert {
   isSpecialSurprise?: boolean;
 }
 
+export interface LiveAlertScenario {
+  id: string;
+  triggerTime: string; // e.g. "2026-10-16 18:00"
+  timeLabel: string; // e.g. "10/16 (五) 18:00"
+  title: string;
+  message: string;
+  secondaryHint: string;
+  category: 'dinner' | 'clinic' | 'birthday' | 'escape' | 'french' | 'bbq' | 'sparkles';
+  badge: string;
+  linkedSurpriseId?: string;
+  isCustom?: boolean;
+}
+
 export interface BirthdayTripData {
   version: string;
   settings: TripSettings;
@@ -159,6 +188,7 @@ export interface BirthdayTripData {
   photos: PhotoMemory[];
   loveLetter: LoveLetter;
   snacks?: SnackVoteItem[];
+  customAlertScenarios?: LiveAlertScenario[];
   activeLiveAlert?: {
     id: string;
     scenarioId: string;
@@ -167,8 +197,9 @@ export interface BirthdayTripData {
     secondaryHint: string;
     timeLabel: string;
     badge: string;
-    category: 'dinner' | 'clinic' | 'birthday' | 'escape' | 'bbq';
+    category: 'dinner' | 'clinic' | 'birthday' | 'escape' | 'french' | 'bbq' | 'sparkles';
     sentAt: string;
+    readAt?: string;
   } | null;
 }
 

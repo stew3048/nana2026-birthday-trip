@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, X, Edit3, Check, Sparkles, Feather } from 'lucide-react';
+import { Heart, X, Edit3, Check, Sparkles, Feather, Plus } from 'lucide-react';
 import { LoveLetter } from '../types';
 
 interface LoveLetterModalProps {
@@ -44,13 +44,13 @@ export const LoveLetterModal: React.FC<LoveLetterModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/70 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="relative w-full max-w-2xl bg-amber-50/95 rounded-3xl shadow-2xl border-2 border-rose-200/80 p-6 sm:p-10 text-stone-850 animate-in fade-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div className="relative w-full max-w-2xl bg-[var(--romantic-card-warm,#F8FAFC)] rounded-3xl shadow-2xl border-2 border-[var(--romantic-border,#BAE6FD)] p-5 sm:p-8 text-[var(--romantic-ink,#0F172A)] animate-in fade-in zoom-in-95 duration-300 max-h-[92vh] overflow-y-auto my-auto">
         
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-stone-200/70 hover:bg-stone-300 text-stone-600 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-[var(--romantic-muted,#64748B)] transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -68,8 +68,8 @@ export const LoveLetterModal: React.FC<LoveLetterModalProps> = ({
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer ${
               isEditing
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'bg-white/80 hover:bg-white text-stone-700 border border-stone-200'
+                ? 'btn-romantic-gold text-white'
+                : 'bg-white hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-ink,#0F172A)] border border-[var(--romantic-border,#BAE6FD)]'
             }`}
           >
             {isEditing ? (
@@ -91,13 +91,13 @@ export const LoveLetterModal: React.FC<LoveLetterModalProps> = ({
           
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-semibold mb-2">
-              <Feather className="w-3.5 h-3.5 text-rose-500" />
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] rounded-full text-xs font-semibold mb-2 border border-[var(--romantic-border,#BAE6FD)]">
+              <Feather className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
               <span>A Love Letter For Your Special Day</span>
             </div>
 
             {!isEditing ? (
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--romantic-ink,#0F172A)]">
                 {loveLetter.title}
               </h2>
             ) : (
@@ -105,27 +105,27 @@ export const LoveLetterModal: React.FC<LoveLetterModalProps> = ({
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full text-center font-serif text-2xl font-bold text-stone-900 border-b border-rose-300 bg-transparent focus:outline-hidden pb-1"
+                className="w-full text-center font-serif text-2xl font-bold text-[var(--romantic-ink,#0F172A)] border-b border-[var(--romantic-border,#BAE6FD)] bg-transparent focus:outline-hidden pb-1"
               />
             )}
           </div>
 
           {/* Letter Body */}
-          <div className="bg-white/90 rounded-2xl p-6 sm:p-8 border border-rose-200/80 shadow-sm font-serif leading-relaxed text-stone-800 space-y-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 border border-[var(--romantic-border,#BAE6FD)] shadow-sm font-serif leading-relaxed text-[var(--romantic-ink,#0F172A)] space-y-4">
             
             {/* Opening */}
             {!isEditing ? (
-              <p className="font-bold text-rose-700 text-lg">
+              <p className="font-bold text-[var(--romantic-rose,#0284C7)] text-lg">
                 {loveLetter.openingText}
               </p>
             ) : (
               <div>
-                <label className="block text-[11px] font-sans font-semibold text-stone-400 mb-1">稱呼 (開頭)</label>
+                <label className="block text-[11px] font-sans font-semibold text-[var(--romantic-muted,#64748B)] mb-1">稱呼 (開頭)</label>
                 <input
                   type="text"
                   value={formData.openingText}
                   onChange={(e) => setFormData({ ...formData, openingText: e.target.value })}
-                  className="w-full font-bold text-rose-700 text-lg border-b border-stone-200 bg-transparent focus:outline-hidden"
+                  className="w-full font-bold text-[var(--romantic-rose,#0284C7)] text-lg border-b border-[var(--romantic-border,#BAE6FD)] bg-transparent focus:outline-hidden"
                 />
               </div>
             )}
@@ -133,24 +133,24 @@ export const LoveLetterModal: React.FC<LoveLetterModalProps> = ({
             {/* Paragraphs */}
             {!isEditing ? (
               loveLetter.bodyParagraphs.map((para, idx) => (
-                <p key={idx} className="text-stone-700 leading-loose text-sm sm:text-base indent-4">
+                <p key={idx} className="text-[var(--romantic-ink,#0F172A)] leading-loose text-sm sm:text-base indent-4">
                   {para}
                 </p>
               ))
             ) : (
               <div className="space-y-3 font-sans">
-                <label className="block text-[11px] font-semibold text-stone-400">信件正文段落</label>
+                <label className="block text-[11px] font-semibold text-[var(--romantic-muted,#64748B)]">信件正文段落</label>
                 {formData.bodyParagraphs.map((para, idx) => (
                   <div key={idx} className="flex items-start space-x-2">
                     <textarea
                       value={para}
                       onChange={(e) => handleParagraphChange(idx, e.target.value)}
                       rows={2}
-                      className="flex-1 p-2 rounded-xl border border-stone-200 text-sm focus:outline-rose-400 font-serif leading-relaxed"
+                      className="flex-1 p-2 rounded-xl border border-[var(--romantic-border,#BAE6FD)] text-sm focus:outline-[var(--romantic-rose,#0284C7)] font-serif leading-relaxed bg-[var(--romantic-card-warm,#F8FAFC)] text-[var(--romantic-ink,#0F172A)]"
                     />
                     <button
                       onClick={() => handleRemoveParagraph(idx)}
-                      className="p-2 text-stone-400 hover:text-rose-600 text-xs"
+                      className="p-2 text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] text-xs cursor-pointer"
                       title="刪除此段"
                     >
                       <X className="w-4 h-4" />
@@ -159,59 +159,55 @@ export const LoveLetterModal: React.FC<LoveLetterModalProps> = ({
                 ))}
 
                 <button
+                  type="button"
                   onClick={handleAddParagraph}
-                  className="px-3 py-1.5 rounded-xl border border-dashed border-rose-300 text-rose-600 hover:bg-rose-50 text-xs font-semibold"
+                  className="px-3 py-1.5 rounded-xl border border-dashed border-[var(--romantic-border,#BAE6FD)] text-[var(--romantic-rose,#0284C7)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-xs font-semibold flex items-center space-x-1 cursor-pointer"
                 >
-                  + 新增一個段落
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>新增段落</span>
                 </button>
               </div>
             )}
 
-            {/* Closing & Signature */}
-            <div className="pt-6 border-t border-rose-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-              {!isEditing ? (
-                <>
-                  <span className="italic text-rose-600 font-medium text-sm sm:text-base">
-                    {loveLetter.closingText}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-xs">
-                      <Heart className="w-4 h-4 fill-white" />
-                    </div>
-                    <span className="font-bold text-stone-850">
-                      {loveLetter.authorName}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="w-full grid grid-cols-2 gap-3 font-sans">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-stone-400 mb-1">祝福結尾語</label>
-                    <input
-                      type="text"
-                      value={formData.closingText}
-                      onChange={(e) => setFormData({ ...formData, closingText: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-stone-400 mb-1">落款署名</label>
-                    <input
-                      type="text"
-                      value={formData.authorName}
-                      onChange={(e) => setFormData({ ...formData, authorName: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-bold"
-                    />
-                  </div>
+            {/* Closing */}
+            {!isEditing ? (
+              <div className="pt-4 text-right">
+                <p className="text-sm font-semibold text-[var(--romantic-muted,#64748B)]">
+                  {loveLetter.closingText}
+                </p>
+                <p className="text-lg font-bold text-[var(--romantic-rose,#0284C7)] mt-1 font-serif">
+                  {loveLetter.signature} 💕
+                </p>
+              </div>
+            ) : (
+              <div className="pt-4 grid grid-cols-2 gap-4 font-sans">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[var(--romantic-muted,#64748B)] mb-1">結尾祝賀語</label>
+                  <input
+                    type="text"
+                    value={formData.closingText}
+                    onChange={(e) => setFormData({ ...formData, closingText: e.target.value })}
+                    className="w-full text-sm font-semibold border-b border-[var(--romantic-border,#BAE6FD)] bg-transparent focus:outline-hidden text-[var(--romantic-ink,#0F172A)]"
+                  />
                 </div>
-              )}
-            </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[var(--romantic-muted,#64748B)] mb-1">簽名</label>
+                  <input
+                    type="text"
+                    value={formData.signature}
+                    onChange={(e) => setFormData({ ...formData, signature: e.target.value })}
+                    className="w-full text-sm font-bold text-[var(--romantic-rose,#0284C7)] border-b border-[var(--romantic-border,#BAE6FD)] bg-transparent focus:outline-hidden"
+                  />
+                </div>
+              </div>
+            )}
 
           </div>
 
           {/* Footer note */}
-          <div className="mt-6 text-center text-xs text-stone-700">
-            💖 每次她點開這封手寫信，都能感受到你最深情的祝福與用心
+          <div className="mt-6 text-center text-xs text-[var(--romantic-muted,#64748B)] flex items-center justify-center space-x-1 font-serif">
+            <Heart className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)] fill-[var(--romantic-rose,#0284C7)]" />
+            <span>這是一封永遠珍藏的專屬手寫情書，陪伴晴寶渡過每一個美好生日。</span>
           </div>
 
         </div>

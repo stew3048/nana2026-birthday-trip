@@ -1,14 +1,137 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --romantic-bg: #FFFFFF;
+    --romantic-card: #FFFFFF;
+    --romantic-card-warm: #F8FAFC;
+    --romantic-rose: #0284C7;
+    --romantic-rose-deep: #0369A1;
+    --romantic-rose-light: #F0F9FF;
+    --romantic-gold: #F59E0B;
+    --romantic-gold-light: #FEF3C7;
+    --romantic-ink: #0F172A;
+    --romantic-muted: #64748B;
+    --romantic-border: #E0F2FE;
+    --romantic-border-subtle: #F0F9FF;
+  }
+
+  [data-theme="ocean"] {
+    --romantic-bg: #FFFFFF;
+    --romantic-card: #FFFFFF;
+    --romantic-card-warm: #F0F9FF;
+    --romantic-rose: #0284C7;
+    --romantic-rose-deep: #0369A1;
+    --romantic-rose-light: #F0F9FF;
+    --romantic-gold: #F59E0B;
+    --romantic-gold-light: #FEF3C7;
+    --romantic-ink: #0F172A;
+    --romantic-muted: #64748B;
+    --romantic-border: #BAE6FD;
+    --romantic-border-subtle: #E0F2FE;
+  }
+
+  [data-theme="aegean"] {
+    --romantic-bg: #FFFFFF;
+    --romantic-card: #FFFFFF;
+    --romantic-card-warm: #EFF6FF;
+    --romantic-rose: #2563EB;
+    --romantic-rose-deep: #1D4ED8;
+    --romantic-rose-light: #EFF6FF;
+    --romantic-gold: #FB923C;
+    --romantic-gold-light: #FFF7ED;
+    --romantic-ink: #1E293B;
+    --romantic-muted: #64748B;
+    --romantic-border: #BFDBFE;
+    --romantic-border-subtle: #DBEAFE;
+  }
+
+  [data-theme="sakura"] {
+    --romantic-bg: #FFFFFF;
+    --romantic-card: #FFFFFF;
+    --romantic-card-warm: #FFF9FB;
+    --romantic-rose: #E05D84;
+    --romantic-rose-deep: #C23B64;
+    --romantic-rose-light: #FCF0F4;
+    --romantic-gold: #D4A373;
+    --romantic-gold-light: #FAF0E6;
+    --romantic-ink: #2E1E24;
+    --romantic-muted: #8C6E79;
+    --romantic-border: #FCE7F0;
+    --romantic-border-subtle: #FDF2F7;
+  }
+
+  [data-theme="vintage"] {
+    --romantic-bg: #FAF8F5;
+    --romantic-card: #FFFFFF;
+    --romantic-card-warm: #FCFBF9;
+    --romantic-rose: #BA5444;
+    --romantic-rose-deep: #8C372A;
+    --romantic-rose-light: #FAF2EB;
+    --romantic-gold: #C5A059;
+    --romantic-gold-light: #F7F2E7;
+    --romantic-ink: #2C221E;
+    --romantic-muted: #7A695E;
+    --romantic-border: #E8DFC8;
+    --romantic-border-subtle: #F0E9DC;
+  }
+
+  [data-theme="midnight"] {
+    --romantic-bg: #0F0C1B;
+    --romantic-card: #1A162B;
+    --romantic-card-warm: #231E38;
+    --romantic-rose: #9065FA;
+    --romantic-rose-deep: #7040EC;
+    --romantic-rose-light: #2A2247;
+    --romantic-gold: #F59E0B;
+    --romantic-gold-light: #382C1A;
+    --romantic-ink: #F5F3FF;
+    --romantic-muted: #A79EC4;
+    --romantic-border: #3A3258;
+    --romantic-border-subtle: #292342;
+  }
+
+  [data-theme="peach"] {
+    --romantic-bg: #FFF9F5;
+    --romantic-card: #FFFFFF;
+    --romantic-card-warm: #FFF5EE;
+    --romantic-rose: #E07A5F;
+    --romantic-rose-deep: #C85A3D;
+    --romantic-rose-light: #FFF2EC;
+    --romantic-gold: #F4A261;
+    --romantic-gold-light: #FEF4E8;
+    --romantic-ink: #332219;
+    --romantic-muted: #8A6D5E;
+    --romantic-border: #F2DFD5;
+    --romantic-border-subtle: #FAEEE7;
+  }
+
+  [data-theme="sage"] {
+    --romantic-bg: #F5F8F6;
+    --romantic-card: #FFFFFF;
+    --romantic-card-warm: #EDF3EF;
+    --romantic-rose: #4D7C5F;
+    --romantic-rose-deep: #355C43;
+    --romantic-rose-light: #EFF6F2;
+    --romantic-gold: #DDA15E;
+    --romantic-gold-light: #FAF1E4;
+    --romantic-ink: #1E2B22;
+    --romantic-muted: #677E6F;
+    --romantic-border: #D8E5DD;
+    --romantic-border-subtle: #E9F1EC;
+  }
+
   body {
-    font-family: 'Noto Serif TC', 'Cormorant Garamond', Georgia, serif;
-    background-color: #FAF8F5;
-    color: #2D241E;
+    font-family: 'Noto Serif TC', 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    background-color: var(--romantic-bg);
+    color: var(--romantic-ink);
+    letter-spacing: 0.015em;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
-  h1, h2, h3, .font-serif {
-    font-family: 'Cormorant Garamond', 'Noto Serif TC', Georgia, serif;
+  h1, h2, h3, h4, .font-serif {
+    font-family: 'Cormorant Garamond', 'Noto Serif TC', 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -21,6 +144,78 @@
   .no-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Romantic journal card style */
+  .romantic-card {
+    background-color: var(--romantic-card);
+    border: 1px solid var(--romantic-border);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  }
+
+  .romantic-card-warm {
+    background-color: var(--romantic-card-warm);
+    border: 1px solid var(--romantic-border);
+    box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Decorative stamp and parchment borders */
+  .parchment-border {
+    border: 1px dashed var(--romantic-border);
+  }
+
+  .vintage-gold-badge {
+    background-color: var(--romantic-gold-light);
+    color: var(--romantic-gold);
+    border: 1px solid var(--romantic-gold);
+  }
+
+  .vintage-rose-badge {
+    background-color: var(--romantic-rose-light);
+    color: var(--romantic-rose-deep);
+    border: 1px solid var(--romantic-rose);
+  }
+
+  .vintage-sage-badge {
+    background: linear-gradient(135deg, #F2F6F3 0%, #E3EDE5 100%);
+    color: #4A6E53;
+    border: 1px solid #C8DEC9;
+  }
+
+  /* Romantic button styles adapted dynamically */
+  .btn-romantic-primary {
+    background: linear-gradient(135deg, var(--romantic-rose) 0%, var(--romantic-rose-deep) 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-romantic-primary:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px -2px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .btn-romantic-gold {
+    background: linear-gradient(135deg, var(--romantic-gold) 0%, #9B7030 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-romantic-gold:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px -2px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .btn-romantic-soft {
+    background-color: var(--romantic-rose-light);
+    color: var(--romantic-rose-deep);
+    border: 1px solid var(--romantic-border);
+    transition: all 0.15s ease-in-out;
+  }
+  .btn-romantic-soft:hover {
+    background-color: var(--romantic-card);
+    color: var(--romantic-rose);
   }
 }
 

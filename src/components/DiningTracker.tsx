@@ -28,6 +28,7 @@ export const DiningTracker: React.FC<DiningTrackerProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isEditing, setIsEditing] = useState(false);
   const [editingItem, setEditingItem] = useState<DiningItem | null>(null);
+  const [deletingItem, setDeletingItem] = useState<DiningItem | null>(null);
 
   const filteredList = diningList.filter(item => {
     if (filterStatus === 'all') return true;
@@ -45,20 +46,20 @@ export const DiningTracker: React.FC<DiningTrackerProps> = ({
       case 'to_book':
         return {
           label: '待搶位/預約',
-          icon: <Clock className="w-3.5 h-3.5 text-amber-600" />,
-          style: 'bg-amber-50 text-amber-700 border-amber-200'
+          icon: <Clock className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)]" />,
+          style: 'bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] border-[var(--romantic-border,#BAE6FD)]'
         };
       case 'waitlist':
         return {
           label: '候補排隊中',
-          icon: <AlertCircle className="w-3.5 h-3.5 text-orange-600" />,
-          style: 'bg-orange-50 text-orange-700 border-orange-200'
+          icon: <AlertCircle className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />,
+          style: 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border-[var(--romantic-border,#BAE6FD)]'
         };
       case 'wishlist':
         return {
           label: '口袋備選名單',
-          icon: <Bookmark className="w-3.5 h-3.5 text-stone-600" />,
-          style: 'bg-stone-100 text-stone-700 border-stone-200'
+          icon: <Bookmark className="w-3.5 h-3.5 text-[var(--romantic-muted,#64748B)]" />,
+          style: 'bg-slate-50 text-[var(--romantic-muted,#64748B)] border-[var(--romantic-border,#BAE6FD)]'
         };
     }
   };
@@ -69,11 +70,11 @@ export const DiningTracker: React.FC<DiningTrackerProps> = ({
       name: '',
       category: 'restaurant',
       status: 'confirmed',
-      dateTime: '2026-09-18 19:00',
+      dateTime: '2026-10-17 18:00',
       location: '',
       locationUrl: '',
       bookingCode: '',
-      specialRequest: '女友生日慶祝，需蛋糕寫字盤',
+      specialRequest: '晴寶生日慶祝，需蛋糕寫字盤',
       mustEatDishes: '',
       notes: ''
     });
@@ -103,96 +104,104 @@ export const DiningTracker: React.FC<DiningTrackerProps> = ({
     setEditingItem(null);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('確定要刪除這家餐廳嗎？')) {
-      onUpdateDining(diningList.filter(d => d.id !== id));
+  const handleDelete = (item: DiningItem) => {
+    setDeletingItem(item);
+  };
+
+  const confirmDeleteDining = () => {
+    if (!deletingItem) return;
+    onUpdateDining(diningList.filter(d => d.id !== deletingItem.id));
+    setDeletingItem(null);
+    if (isEditing && editingItem?.id === deletingItem.id) {
+      setIsEditing(false);
+      setEditingItem(null);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[var(--romantic-ink,#0F172A)]">
       
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-3xl p-6 border border-rose-100 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-3xl p-6 border border-[var(--romantic-border,#BAE6FD)] shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 rounded-xl bg-amber-100 text-amber-700">
+            <span className="p-2 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)]">
               <Utensils className="w-5 h-5" />
             </span>
-            <h2 className="font-serif text-2xl font-bold text-stone-850">
+            <h2 className="font-serif text-2xl font-bold text-[var(--romantic-ink,#0F172A)]">
               🍽️ 浪漫美饌 & 慶生訂位管理
             </h2>
           </div>
-          <p className="text-stone-700 text-xs sm:text-sm mt-1">
+          <p className="text-[var(--romantic-muted,#64748B)] text-xs sm:text-sm mt-1">
             記錄所有為她預訂的景觀餐廳、下午茶咖啡廳與生日蛋糕備註。
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Status Filter */}
-          <div className="flex items-center space-x-1 bg-stone-100 p-1 rounded-xl text-xs font-medium">
+          <div className="flex items-center space-x-1 bg-[var(--romantic-rose-light,#F0F9FF)] p-1 rounded-2xl text-xs font-medium border border-[var(--romantic-border,#BAE6FD)]">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                filterStatus === 'all' ? 'bg-white text-stone-900 shadow-2xs font-semibold' : 'text-stone-600'
+              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                filterStatus === 'all' ? 'btn-romantic-primary font-bold shadow-xs' : 'text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)]'
               }`}
             >
               全部 ({diningList.length})
             </button>
             <button
               onClick={() => setFilterStatus('confirmed')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                filterStatus === 'confirmed' ? 'bg-white text-emerald-700 shadow-2xs font-semibold' : 'text-stone-600'
+              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                filterStatus === 'confirmed' ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300' : 'text-[var(--romantic-muted,#64748B)] hover:text-emerald-700'
               }`}
             >
               已訂位 ({diningList.filter(d => d.status === 'confirmed').length})
             </button>
             <button
               onClick={() => setFilterStatus('to_book')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                filterStatus === 'to_book' ? 'bg-white text-amber-700 shadow-2xs font-semibold' : 'text-stone-600'
+              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                filterStatus === 'to_book' ? 'bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] font-bold border border-[var(--romantic-border,#BAE6FD)]' : 'text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-gold,#F59E0B)]'
               }`}
             >
-              待預約
+              待預約 ({diningList.filter(d => d.status === 'to_book').length})
             </button>
           </div>
 
           <button
             onClick={handleOpenAdd}
-            className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium flex items-center space-x-1 shadow-xs shadow-rose-200 cursor-pointer"
+            className="px-4 py-2 rounded-2xl btn-romantic-primary text-white font-medium text-xs sm:text-sm shadow-xs flex items-center space-x-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>新增餐廳</span>
+            <span>新增訂位記錄</span>
           </button>
         </div>
       </div>
 
-      {/* Grid of Dining Cards */}
+      {/* Dining Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {filteredList.map((item) => {
-          const statusBadge = getStatusBadge(item.status);
+          const badge = getStatusBadge(item.status);
 
           return (
             <div
               key={item.id}
-              className="bg-white rounded-3xl p-6 border border-stone-200 hover:border-amber-300 shadow-xs hover:shadow-md transition-all space-y-4"
+              className="bg-white rounded-3xl p-6 border border-[var(--romantic-border,#BAE6FD)] shadow-sm hover:shadow-md transition-all space-y-4 relative"
             >
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex items-center space-x-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${statusBadge.style}`}>
-                      {statusBadge.icon}
-                      <span>{statusBadge.label}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className={`inline-flex items-center space-x-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${badge.style}`}>
+                      {badge.icon}
+                      <span>{badge.label}</span>
                     </span>
 
                     {item.bookingCode && (
-                      <span className="text-xs font-mono px-2 py-0.5 bg-stone-100 text-stone-700 rounded-md">
-                        代號: #{item.bookingCode}
+                      <span className="text-xs font-mono font-bold bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-ink,#0F172A)] px-2 py-0.5 rounded-md border border-[var(--romantic-border,#BAE6FD)]">
+                        訂位代號: {item.bookingCode}
                       </span>
                     )}
                   </div>
 
-                  <h3 className="font-serif text-xl font-bold text-stone-850">
+                  <h3 className="font-serif text-xl font-bold text-[var(--romantic-ink,#0F172A)] pt-1">
                     {item.name}
                   </h3>
                 </div>
@@ -200,13 +209,15 @@ export const DiningTracker: React.FC<DiningTrackerProps> = ({
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => handleOpenEdit(item)}
-                    className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] transition-colors cursor-pointer"
+                    title="編輯"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(item.id)}
-                    className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    onClick={() => handleDelete(item)}
+                    className="p-1.5 rounded-lg text-[var(--romantic-muted,#64748B)] hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    title="刪除"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -214,55 +225,56 @@ export const DiningTracker: React.FC<DiningTrackerProps> = ({
               </div>
 
               {/* Time & Location */}
-              <div className="space-y-1.5 text-xs text-stone-600">
-                {item.dateTime && (
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-3.5 h-3.5 text-rose-500" />
-                    <span className="font-medium text-stone-800">{item.dateTime}</span>
-                  </div>
-                )}
-
+              <div className="space-y-1.5 text-xs text-[var(--romantic-muted,#64748B)] pt-1">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
+                  <span className="font-semibold text-[var(--romantic-ink,#0F172A)]">{item.dateTime}</span>
+                </div>
                 {item.location && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                      <MapPin className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)]" />
                       <span>{item.location}</span>
                     </div>
-
-                    <a
-                      href={item.locationUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.location)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1 text-rose-600 hover:underline"
-                    >
-                      <span>地圖</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    {item.locationUrl && (
+                      <a
+                        href={item.locationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--romantic-rose,#0284C7)] hover:underline flex items-center space-x-1"
+                      >
+                        <span>地圖</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
 
               {/* Birthday Special Request */}
               {item.specialRequest && (
-                <div className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-xs text-rose-800 flex items-start space-x-2">
-                  <Cake className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold">生日特別備註：</span>
-                    <span>{item.specialRequest}</span>
+                <div className="p-3 rounded-2xl bg-[var(--romantic-gold-light,#FEF3C7)] border border-[var(--romantic-border,#BAE6FD)] text-xs text-[var(--romantic-gold,#F59E0B)] space-y-1">
+                  <div className="flex items-center space-x-1.5 font-bold">
+                    <Cake className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)]" />
+                    <span>生日特別備註 / 驚喜需求：</span>
                   </div>
+                  <p className="pl-5 leading-relaxed text-[var(--romantic-ink,#0F172A)]">{item.specialRequest}</p>
                 </div>
               )}
 
-              {/* Must-eat dishes or Notes */}
-              {(item.mustEatDishes || item.notes) && (
-                <div className="text-xs text-stone-500 space-y-1 pt-1 border-t border-stone-100">
-                  {item.mustEatDishes && (
-                    <div>✨ 推薦必吃：<span className="text-stone-700 font-medium">{item.mustEatDishes}</span></div>
-                  )}
-                  {item.notes && (
-                    <div>📝 注意事項：<span>{item.notes}</span></div>
-                  )}
+              {/* Must Eat Dishes */}
+              {item.mustEatDishes && (
+                <div className="text-xs text-[var(--romantic-ink,#0F172A)]">
+                  <span className="font-bold text-[var(--romantic-rose,#0284C7)]">推薦必點：</span>
+                  <span className="text-[var(--romantic-muted,#64748B)] ml-1">{item.mustEatDishes}</span>
                 </div>
+              )}
+
+              {/* Notes */}
+              {item.notes && (
+                <p className="text-xs text-[var(--romantic-muted,#64748B)] italic border-t border-[var(--romantic-border,#BAE6FD)] pt-2">
+                  備註：{item.notes}
+                </p>
               )}
             </div>
           );
@@ -271,122 +283,183 @@ export const DiningTracker: React.FC<DiningTrackerProps> = ({
 
       {/* Edit / Add Dining Modal */}
       {isEditing && editingItem && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95">
-            <h3 className="font-serif text-xl font-bold text-stone-850 mb-4">
-              🍽️ 規劃浪漫餐廳 / 訂位資訊
-            </h3>
+        <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[var(--romantic-border,#BAE6FD)] max-h-[92vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-5 sm:px-7 py-4 border-b border-[var(--romantic-border,#BAE6FD)] flex items-center justify-between shrink-0 bg-white">
+              <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--romantic-ink,#0F172A)]">
+                🍽️ 編輯訂位記錄
+              </h3>
+              <button
+                type="button"
+                onClick={() => { setIsEditing(false); setEditingItem(null); }}
+                className="text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-ink,#0F172A)] text-lg font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
 
-            <div className="space-y-4 text-sm text-stone-700">
+            <div className="p-5 sm:p-7 overflow-y-auto space-y-4 text-xs text-[var(--romantic-ink,#0F172A)] flex-1">
               <div>
-                <label className="block text-xs font-semibold text-stone-600 mb-1">
-                  餐廳名稱 *
+                <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                  餐廳/咖啡廳名稱 *
                 </label>
                 <input
                   type="text"
                   value={editingItem.name}
                   onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
-                  placeholder="例如：Sky Restaurant 634 晴空塔景觀餐廳"
-                  className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:outline-rose-400 font-medium"
+                  placeholder="例如：煙波早堂、碳佐麻里 精品燒肉"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1">
-                    訂位狀態
+                  <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                    預訂狀態
                   </label>
                   <select
                     value={editingItem.status}
                     onChange={(e) => setEditingItem({ ...editingItem, status: e.target.value as DiningItem['status'] })}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:outline-rose-400 bg-white"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
                   >
                     <option value="confirmed">已訂位確認</option>
                     <option value="to_book">待搶位/預約</option>
                     <option value="waitlist">候補排隊中</option>
-                    <option value="wishlist">口袋名單</option>
+                    <option value="wishlist">口袋備選名單</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1">
-                    預訂日期與時間
-                  </label>
-                  <input
-                    type="text"
-                    value={editingItem.dateTime || ''}
-                    onChange={(e) => setEditingItem({ ...editingItem, dateTime: e.target.value })}
-                    placeholder="2026-09-18 19:00"
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:outline-rose-400"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1">
-                    地點
-                  </label>
-                  <input
-                    type="text"
-                    value={editingItem.location || ''}
-                    onChange={(e) => setEditingItem({ ...editingItem, location: e.target.value })}
-                    placeholder="東京都墨田區晴空塔"
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:outline-rose-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1">
-                    訂位代號 / 編號
+                  <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                    訂位代號 (選填)
                   </label>
                   <input
                     type="text"
                     value={editingItem.bookingCode || ''}
                     onChange={(e) => setEditingItem({ ...editingItem, bookingCode: e.target.value })}
-                    placeholder="#TYO-9918"
-                    className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:outline-rose-400 font-mono"
+                    placeholder="#RES-20261017"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-600 mb-1">
-                  🎂 生日特別備註 (蛋糕/寫字盤/靠窗席)
+                <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                  用餐日期與時間
                 </label>
                 <input
                   type="text"
+                  value={editingItem.dateTime}
+                  onChange={(e) => setEditingItem({ ...editingItem, dateTime: e.target.value })}
+                  placeholder="例如：2026-10-17 18:00"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                    餐廳地址 / 位置
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.location || ''}
+                    onChange={(e) => setEditingItem({ ...editingItem, location: e.target.value })}
+                    placeholder="台南市中西區..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                    Google Maps 網址
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.locationUrl || ''}
+                    onChange={(e) => setEditingItem({ ...editingItem, locationUrl: e.target.value })}
+                    placeholder="https://maps.google.com/..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                  生日特別需求 / 慶生備註
+                </label>
+                <textarea
+                  rows={2}
                   value={editingItem.specialRequest || ''}
                   onChange={(e) => setEditingItem({ ...editingItem, specialRequest: e.target.value })}
-                  placeholder="已備註女友生日需寫字盤 + 靠窗夜景席"
-                  className="w-full px-3 py-2 rounded-xl border border-rose-200 focus:outline-rose-400 bg-rose-50/50"
+                  placeholder="例如：壽星慶生甜點畫盤、靠窗安靜位..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-600 mb-1">
-                  必吃招牌菜色
+                <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                  必點推薦菜色
                 </label>
                 <input
                   type="text"
                   value={editingItem.mustEatDishes || ''}
                   onChange={(e) => setEditingItem({ ...editingItem, mustEatDishes: e.target.value })}
-                  placeholder="法式黑毛和牛、草莓千層派"
-                  className="w-full px-3 py-2 rounded-xl border border-stone-200 focus:outline-rose-400"
+                  placeholder="例如：和牛拼盤、招牌布丁"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-stone-100">
+            <div className="px-5 sm:px-7 py-4 border-t border-[var(--romantic-border,#BAE6FD)] flex items-center justify-end space-x-3 shrink-0 bg-white">
               <button
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 rounded-xl text-stone-600 hover:bg-stone-100 text-xs font-medium cursor-pointer"
+                type="button"
+                onClick={() => { setIsEditing(false); setEditingItem(null); }}
+                className="px-4 py-2 rounded-xl text-[var(--romantic-muted,#64748B)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-xs font-medium cursor-pointer"
               >
                 取消
               </button>
               <button
+                type="button"
                 onClick={handleSave}
-                className="px-5 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium shadow-xs shadow-rose-200 cursor-pointer"
+                className="px-5 py-2 rounded-xl btn-romantic-primary text-white text-xs font-medium cursor-pointer shadow-xs"
               >
-                儲存餐廳
+                儲存訂位
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingItem && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-[var(--romantic-border,#BAE6FD)] text-center animate-in fade-in duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4 border border-rose-200">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="font-serif text-xl font-bold text-[var(--romantic-ink,#0F172A)] mb-2">
+              確定要刪除此訂位記錄嗎？
+            </h3>
+            <p className="text-sm text-[var(--romantic-muted,#64748B)] mb-1">
+              餐廳名稱：<strong className="text-[var(--romantic-ink,#0F172A)] font-semibold">{deletingItem.name}</strong>
+            </p>
+            <p className="text-xs text-[var(--romantic-muted,#64748B)] mb-6">
+              時間：{deletingItem.dateTime} · 狀態：{getStatusBadge(deletingItem.status).label}
+            </p>
+            <div className="flex items-center justify-center space-x-3">
+              <button
+                type="button"
+                onClick={() => setDeletingItem(null)}
+                className="px-5 py-2.5 rounded-xl text-[var(--romantic-muted,#64748B)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-xs font-semibold cursor-pointer border border-[var(--romantic-border,#BAE6FD)]"
+              >
+                取消保留
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteDining}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md cursor-pointer flex items-center space-x-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>確認刪除訂位</span>
               </button>
             </div>
           </div>

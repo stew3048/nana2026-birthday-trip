@@ -17,7 +17,8 @@ import {
   UtensilsCrossed,
   Cloud,
   Star,
-  ClipboardList
+  ClipboardList,
+  Palette
 } from 'lucide-react';
 import { BirthdayTripData } from '../types';
 import { exportTripToJson, generateShareableUrl, getPresetByName, syncTripToCloud } from '../utils/storage';
@@ -121,50 +122,62 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-rose-100 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+    <header className="sticky top-0 z-40 bg-[var(--romantic-card-warm,#F8FAFC)]/95 backdrop-blur-md border-b border-[var(--romantic-border,#BAE6FD)] shadow-xs text-[var(--romantic-ink,#0F172A)] transition-colors duration-300">
+      {/* Click outside backdrop for admin menu */}
+      {showPresetMenu && (
+        <div 
+          className="fixed inset-0 z-40 bg-transparent"
+          onClick={() => setShowPresetMenu(false)}
+        />
+      )}
+
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative z-40">
+        <div className="flex items-center justify-between min-h-[3.75rem] sm:h-20 py-2 sm:py-0 gap-2">
           
-          {/* Logo & Main Title */}
-          <div className="flex items-center space-x-3">
+          {/* Logo & Main Title: ⭐ 晴寶 2026 生日 */}
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 mr-1 sm:mr-2">
             <button
               id="header-romantic-logo-btn"
               onClick={onTriggerSurpriseModal}
-              className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-rose-400 to-pink-500 text-white shadow-md shadow-rose-200 hover:scale-105 transition-transform cursor-pointer"
+              className="flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-2xl btn-romantic-primary text-white shadow-md hover:scale-105 transition-transform cursor-pointer shrink-0 border border-white/40"
               title="點擊播放慶生驚喜"
             >
-              <Star className="w-5 h-5 sm:w-6 sm:h-6 fill-white animate-pulse" />
+              <Star className="w-4 h-4 sm:w-6 sm:h-6 fill-white animate-pulse" />
             </button>
-            <div>
+            <div className="min-w-0 truncate">
               <div className="flex items-center space-x-2">
-                <div className="font-serif font-bold tracking-tight text-stone-900 leading-tight">
-                  <div className="text-base sm:text-lg">⭐ 晴寶 2026 生日</div>
-                  <div className="text-sm sm:text-base text-rose-600">專屬台南之旅</div>
+                <div className="font-serif font-bold tracking-tight text-[var(--romantic-ink,#0F172A)] leading-tight min-w-0 truncate">
+                  <div className="text-sm sm:text-base md:text-lg flex items-center space-x-1 truncate">
+                    <span className="truncate">⭐ {tripData.settings.girlfriendName || '晴寶'} 2026 生日</span>
+                  </div>
+                  <div className="text-[11px] sm:text-xs text-[var(--romantic-rose,#0284C7)] font-medium truncate">
+                    專屬台南煙波浪漫之旅
+                  </div>
                 </div>
-                <div className="hidden sm:inline-flex flex-col items-center px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200 leading-tight">
+                <div className="hidden md:inline-flex flex-col items-center px-2 py-0.5 rounded-xl text-[10px] font-bold bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#E0F2FE)] leading-tight shrink-0">
                   <span>🎂 10/16~10/18</span>
                   <span>生日假期</span>
                 </div>
               </div>
-              <p className="text-xs text-stone-600 hidden sm:block mt-0.5">
+              <p className="text-[11px] text-[var(--romantic-muted,#64748B)] hidden lg:block mt-0.5 truncate">
                 📍 台南 Tainan · 由 {tripData.settings.boyfriendName || '蔡寶'} 專屬精心策劃
               </p>
             </div>
           </div>
 
           {/* Action Tools */}
-          <div className="flex items-center space-x-1.5 sm:space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
             {/* Live Alerts Trigger - Only for Boyfriend (Admin) */}
             {isBoyfriend && (
               <button
                 id="header-live-alerts-btn"
                 onClick={onOpenLiveAlerts}
-                className="flex items-center space-x-1 sm:space-x-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                className="flex items-center space-x-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-[#FFFBF0] hover:bg-[#FDF4DC] text-[#8C6A28] border border-[#E8DFC8] text-xs font-bold shadow-xs transition-all cursor-pointer whitespace-nowrap"
                 title="查看與模擬 18:00 晚餐 / 23:00 密醫看診等互動情境通知"
               >
-                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 animate-bounce" />
-                <span className="hidden md:inline">即時情境通知</span>
-                <span className="hidden sm:inline-block px-1.5 py-0.2 bg-amber-200 text-amber-900 text-[10px] rounded-full font-extrabold">
+                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C5A059] animate-bounce" />
+                <span className="hidden sm:inline">情境通知</span>
+                <span className="px-1 py-0.2 bg-[#F5E8CE] text-[#8C6A28] text-[9px] rounded-full font-extrabold border border-[#E3D1AC]">
                   發送
                 </span>
               </button>
@@ -174,28 +187,29 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="header-surprise-mode-btn"
               onClick={onTriggerSurpriseModal}
-              className="flex items-center space-x-1 sm:space-x-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs sm:text-sm font-medium shadow-xs shadow-rose-200 hover:shadow-md transition-all cursor-pointer whitespace-nowrap"
+              className="flex items-center space-x-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-full btn-romantic-primary text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shadow-xs"
             >
-              <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>驚喜揭曉</span>
+              <Gift className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline sm:inline">驚喜揭曉</span>
+              <span className="xs:hidden sm:hidden">驚喜</span>
             </button>
 
             {/* Music Toggle - Available to everyone */}
             <button
               id="header-music-btn"
               onClick={toggleMusic}
-              className={`p-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center space-x-1.5 transition-colors cursor-pointer ${
+              className={`p-1.5 sm:px-2.5 sm:py-2 rounded-xl text-xs font-medium flex items-center space-x-1 transition-colors cursor-pointer border ${
                 isPlayingMusic 
-                  ? 'bg-rose-100 text-rose-700 border border-rose-300' 
-                  : 'bg-stone-100 text-stone-600 hover:bg-rose-50 hover:text-rose-600'
+                  ? 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border-[var(--romantic-border,#BAE6FD)]' 
+                  : 'bg-white text-[var(--romantic-muted,#64748B)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border-[#E2E8F0]'
               }`}
               title={isPlayingMusic ? '暫停浪漫背景音樂' : '播放浪漫背景音樂'}
             >
-              <Music className={`w-4 h-4 ${isPlayingMusic ? 'animate-spin' : ''}`} />
+              <Music className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isPlayingMusic ? 'animate-spin text-[var(--romantic-rose,#0284C7)]' : 'text-slate-400'}`} />
               <span className="hidden md:inline">{isPlayingMusic ? '音樂中' : '浪漫音樂'}</span>
             </button>
 
-            {/* Boyfriend-Only Admin Tools: Compact Tool Menu to prevent overflow */}
+            {/* Boyfriend-Only Admin Tools: Compact Tool Menu */}
             {isBoyfriend && (
               <>
                 {/* Cloud Sync Button */}
@@ -203,14 +217,14 @@ export const Header: React.FC<HeaderProps> = ({
                   id="header-cloud-sync-btn"
                   onClick={handleCloudSync}
                   disabled={isCloudSyncing}
-                  className={`p-1.5 sm:px-2.5 sm:py-2 rounded-xl text-xs font-medium flex items-center space-x-1 transition-colors cursor-pointer ${
+                  className={`p-1.5 sm:px-2.5 sm:py-2 rounded-xl text-xs font-medium flex items-center space-x-1 transition-colors cursor-pointer border ${
                     cloudSyncSuccess
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                      ? 'bg-[#F2F6F3] text-[#4A6E53] border-[#C8DEC9]'
+                      : 'bg-white text-[var(--romantic-muted,#64748B)] border-[#E2E8F0] hover:bg-slate-50'
                   }`}
                   title="同步全部行程至 Firebase 雲端資料庫"
                 >
-                  <Cloud className={`w-4 h-4 ${isCloudSyncing ? 'animate-spin' : ''}`} />
+                  <Cloud className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isCloudSyncing ? 'animate-spin' : ''}`} />
                   <span className="hidden lg:inline">{cloudSyncSuccess ? '已同步' : '雲端同步'}</span>
                 </button>
 
@@ -218,76 +232,76 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   id="header-share-btn"
                   onClick={handleShare}
-                  className="p-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-stone-100 hover:bg-rose-50 text-stone-700 hover:text-rose-600 text-xs font-medium flex items-center space-x-1 transition-colors cursor-pointer"
+                  className="p-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-white hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] border border-[#E2E8F0] text-xs font-medium flex items-center space-x-1 transition-colors cursor-pointer"
                   title="複製專屬分享連結給晴寶"
                 >
                   {copiedShare ? (
                     <>
-                      <Check className="w-4 h-4 text-emerald-600" />
-                      <span className="hidden xl:inline text-emerald-600 font-medium">已複製！</span>
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#4A6E53]" />
+                      <span className="hidden xl:inline text-[#4A6E53] font-medium">已複製！</span>
                     </>
                   ) : (
                     <>
-                      <Share2 className="w-4 h-4" />
+                      <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <span className="hidden xl:inline">分享</span>
                     </>
                   )}
                 </button>
 
-                {/* More Admin Options Dropdown (Netlify, Presets, Print, Backup, Settings) */}
+                {/* More Admin Options Dropdown */}
                 <div className="relative">
                   <button
                     id="header-admin-more-btn"
                     onClick={() => setShowPresetMenu(!showPresetMenu)}
-                    className="p-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium flex items-center space-x-1 transition-colors cursor-pointer"
+                    className="p-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-white hover:bg-slate-50 text-[var(--romantic-muted,#64748B)] border border-[#E2E8F0] text-xs font-medium flex items-center space-x-1 transition-colors cursor-pointer"
                     title="管理員更多工具 (範本、列印、備份、設定)"
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span className="hidden md:inline">工具</span>
                   </button>
 
                   {showPresetMenu && (
-                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                      <div className="px-3 py-1 text-xs font-semibold text-stone-400 uppercase tracking-wider">
+                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-[#CBD5E1] py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                      <div className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                         👑 管理員更多功能
                       </div>
 
                       <button
                         onClick={() => { onOpenSettings(); setShowPresetMenu(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-rose-50 flex items-center space-x-2"
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] flex items-center space-x-2 transition-colors cursor-pointer"
                       >
-                        <Settings className="w-4 h-4 text-stone-500" />
+                        <Settings className="w-4 h-4 text-slate-400" />
                         <span>基本資料與權限設定</span>
                       </button>
 
                       <button
                         onClick={() => { onOpenPrintGuide(); setShowPresetMenu(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-rose-50 flex items-center space-x-2"
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] flex items-center space-x-2 transition-colors cursor-pointer"
                       >
-                        <Printer className="w-4 h-4 text-stone-500" />
+                        <Printer className="w-4 h-4 text-slate-400" />
                         <span>列印手冊 / 另存 PDF</span>
                       </button>
 
                       <button
                         onClick={() => { onOpenNetlifyGuide(); setShowPresetMenu(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-cyan-50 flex items-center space-x-2"
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-amber-50 hover:text-amber-700 flex items-center space-x-2 transition-colors cursor-pointer"
                       >
-                        <Globe className="w-4 h-4 text-cyan-600" />
+                        <Globe className="w-4 h-4 text-amber-500" />
                         <span>Netlify 免費上架教學</span>
                       </button>
 
-                      <div className="border-t border-stone-100 my-1"></div>
+                      <div className="border-t border-slate-100 my-1"></div>
 
                       <button
                         onClick={() => { exportTripToJson(tripData); setShowPresetMenu(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 flex items-center space-x-2"
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition-colors cursor-pointer"
                       >
-                        <Download className="w-4 h-4 text-stone-500" />
+                        <Download className="w-4 h-4 text-slate-400" />
                         <span>匯出備份 (JSON)</span>
                       </button>
 
-                      <label className="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 flex items-center space-x-2 cursor-pointer">
-                        <Upload className="w-4 h-4 text-stone-500" />
+                      <label className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition-colors cursor-pointer">
+                        <Upload className="w-4 h-4 text-slate-400" />
                         <span>匯入備份 (JSON)</span>
                         <input
                           type="file"
@@ -297,29 +311,29 @@ export const Header: React.FC<HeaderProps> = ({
                         />
                       </label>
 
-                      <div className="border-t border-stone-100 my-1"></div>
+                      <div className="border-t border-slate-100 my-1"></div>
 
-                      <div className="px-3 py-1 text-xs font-semibold text-stone-400 uppercase tracking-wider">
+                      <div className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                         行程範本切換
                       </div>
                       <button
                         onClick={() => switchPreset('tainan')}
-                        className="w-full text-left px-4 py-2.5 text-sm text-stone-800 hover:bg-rose-50 flex items-center space-x-2"
+                        className="w-full text-left px-4 py-2.5 text-sm text-slate-800 hover:bg-sky-50 flex items-center space-x-2 transition-colors cursor-pointer"
                       >
-                        <span>💖</span>
+                        <span>🌊</span>
                         <div>
-                          <div className="font-bold text-rose-600">晴寶專屬台南煙波 3日遊</div>
-                          <div className="text-xs text-stone-500">10/16~10/18 密醫看診·皮革手作·奇美VR·燒肉</div>
+                          <div className="font-bold text-sky-700">晴寶專屬台南煙波 3日遊</div>
+                          <div className="text-xs text-slate-500">10/16~10/18 密醫看診·皮革手作·奇美VR·燒肉</div>
                         </div>
                       </button>
                       <button
                         onClick={() => switchPreset('tokyo')}
-                        className="w-full text-left px-4 py-2.5 text-sm text-stone-800 hover:bg-rose-50 flex items-center space-x-2"
+                        className="w-full text-left px-4 py-2.5 text-sm text-slate-800 hover:bg-sky-50 flex items-center space-x-2 transition-colors cursor-pointer"
                       >
                         <span>🌸</span>
                         <div>
-                          <div className="font-medium">東京富士山 5日遊</div>
-                          <div className="text-xs text-stone-500">迪士尼·溫泉Villa·晴空塔夜景</div>
+                          <div className="font-medium text-slate-700">東京富士山 5日遊</div>
+                          <div className="text-xs text-slate-500">迪士尼·溫泉Villa·晴空塔夜景</div>
                         </div>
                       </button>
                     </div>
@@ -331,42 +345,54 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-2.5 no-scrollbar text-sm font-medium border-t border-stone-100">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 overflow-x-auto py-2.5 no-scrollbar text-sm font-medium border-t border-[#E2E8F0]">
           <button
-            onClick={() => setActiveTab('itinerary')}
-            className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'itinerary'
-                ? 'bg-rose-500 text-white shadow-xs font-semibold'
-                : 'text-stone-600 hover:bg-rose-50 hover:text-rose-600'
+            onClick={() => setActiveTab('home')}
+            className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
+              activeTab === 'home'
+                ? 'btn-romantic-primary font-bold shadow-xs'
+                : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
             }`}
           >
-            🗺️ 每日時刻表
+            <span>🏠 首頁</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('itinerary')}
+            className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
+              activeTab === 'itinerary'
+                ? 'btn-romantic-primary font-bold shadow-xs'
+                : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
+            }`}
+          >
+            <span>🗺️ 每日時刻表</span>
           </button>
 
           <button
             onClick={() => setActiveTab('snacks')}
             className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
               activeTab === 'snacks'
-                ? 'bg-amber-500 text-white shadow-xs font-bold'
-                : 'text-stone-700 bg-amber-50/80 hover:bg-amber-100 hover:text-amber-900 border border-amber-200'
+                ? 'btn-romantic-primary font-bold shadow-xs'
+                : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
             }`}
           >
-            <span>🍜 晴寶小吃心願選單</span>
-            <span className="px-1.5 py-0.2 bg-rose-500 text-white text-[10px] rounded-full font-bold">
-              Firebase實時
-            </span>
+            <span>🍜 台南小吃心願清單</span>
           </button>
 
           <button
             onClick={() => setActiveTab('surprises')}
-            className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1 ${
+            className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
               activeTab === 'surprises'
-                ? 'bg-rose-500 text-white shadow-xs font-semibold'
-                : 'text-stone-600 hover:bg-rose-50 hover:text-rose-600'
+                ? 'btn-romantic-primary font-bold shadow-xs'
+                : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
             }`}
           >
             <span>🎁 神秘驚喜任務</span>
-            <span className="px-1.5 py-0.2 bg-pink-100 text-pink-700 text-xs rounded-full font-bold">
+            <span className={`px-1.5 py-0.2 text-xs rounded-full font-bold ${
+              activeTab === 'surprises' 
+                ? 'bg-white text-[var(--romantic-rose,#0284C7)]' 
+                : 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)]'
+            }`}>
               {tripData.surprises.length}
             </span>
           </button>
@@ -377,13 +403,17 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setActiveTab('dining')}
               className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
                 activeTab === 'dining'
-                  ? 'bg-rose-500 text-white shadow-xs font-semibold'
-                  : 'text-stone-600 hover:bg-rose-50 hover:text-rose-600'
+                  ? 'btn-romantic-primary font-bold shadow-xs'
+                  : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
               }`}
             >
-              <ClipboardList className="w-3.5 h-3.5 text-rose-400" />
+              <ClipboardList className="w-3.5 h-3.5 opacity-80" />
               <span>📋 訂位管理</span>
-              <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded-full font-semibold">
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                activeTab === 'dining' 
+                  ? 'bg-white text-[var(--romantic-rose,#0284C7)]' 
+                  : 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)]'
+              }`}>
                 保密
               </span>
             </button>
@@ -394,25 +424,29 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab('packing')}
             className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'packing'
-                ? 'bg-rose-500 text-white shadow-xs font-semibold'
-                : 'text-stone-600 hover:bg-rose-50 hover:text-rose-600'
+                ? 'btn-romantic-primary font-bold shadow-xs'
+                : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
             }`}
           >
             🧳 旅行準備清單
           </button>
 
-          {/* 💰 蔡寶全包花費記帳 - Only visible to boyfriend */}
+          {/* 💰 花費記帳 - Only visible to boyfriend */}
           {isBoyfriend && (
             <button
               onClick={() => setActiveTab('budget')}
-              className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1 ${
+              className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
                 activeTab === 'budget'
-                  ? 'bg-rose-500 text-white shadow-xs font-semibold'
-                  : 'text-stone-600 hover:bg-rose-50 hover:text-rose-600'
+                  ? 'btn-romantic-primary font-bold shadow-xs'
+                  : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
               }`}
             >
-              <span>💰 蔡寶全包花費記帳</span>
-              <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded-full font-semibold">
+              <span>💰 花費記帳</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                activeTab === 'budget' 
+                  ? 'bg-white text-[var(--romantic-rose,#0284C7)]' 
+                  : 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)]'
+              }`}>
                 保密
               </span>
             </button>
@@ -422,16 +456,29 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab('photos')}
             className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer ${
               activeTab === 'photos'
-                ? 'bg-rose-500 text-white shadow-xs font-semibold'
-                : 'text-stone-600 hover:bg-rose-50 hover:text-rose-600'
+                ? 'btn-romantic-primary font-bold shadow-xs'
+                : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
             }`}
           >
             📸 拍立得回憶牆
           </button>
 
+          {/* 🎨 風格試衣間 Theme Studio Tab */}
+          <button
+            onClick={() => setActiveTab('themes')}
+            className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
+              activeTab === 'themes'
+                ? 'btn-romantic-primary font-bold shadow-xs'
+                : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
+            }`}
+          >
+            <Palette className="w-3.5 h-3.5" />
+            <span>🎨 風格試衣間</span>
+          </button>
+
           <button
             onClick={onOpenLoveLetter}
-            className="px-3.5 py-1.5 rounded-full whitespace-nowrap text-pink-700 bg-pink-50 hover:bg-pink-100 border border-pink-200 transition-all cursor-pointer font-bold flex items-center space-x-1"
+            className="px-3.5 py-1.5 rounded-full whitespace-nowrap text-[var(--romantic-rose,#0284C7)] bg-[var(--romantic-rose-light,#F0F9FF)] hover:bg-sky-100 border border-[var(--romantic-border,#BAE6FD)] transition-all cursor-pointer font-bold flex items-center space-x-1 shadow-xs"
           >
             <span>💌 給晴寶的生日手寫信</span>
           </button>

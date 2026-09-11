@@ -14,17 +14,9 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { romanticMusic } from '../utils/audio';
+import { LiveAlertScenario } from '../types';
 
-export interface LiveAlertScenario {
-  id: string;
-  triggerTime: string;
-  timeLabel: string;
-  title: string;
-  message: string;
-  secondaryHint: string;
-  category: 'dinner' | 'clinic' | 'birthday' | 'escape' | 'bbq';
-  badge: string;
-}
+export type { LiveAlertScenario };
 
 export const ALERT_SCENARIOS: LiveAlertScenario[] = [
   {
@@ -51,11 +43,12 @@ export const ALERT_SCENARIOS: LiveAlertScenario[] = [
     id: 'alert-1017-birthday',
     triggerTime: '2026-10-17 00:00',
     timeLabel: '10/17 (六) 00:00',
-    title: '🎂 10/17 晴寶生日大日子到來！生日快樂！',
+    title: '🎂 10/17 壽星跨日整點！真情告白卡片 ＆ 秘密大禮盒',
     message: '全宇宙最可愛的小仙女晴寶，祝妳生日快樂！願妳新的一歲健康平安、所有願望都在蔡寶的守護下燦爛實現！',
-    secondaryHint: '今天一整天妳是專屬女王，準備好迎接滿滿的驚喜與寵愛了嗎？ 🎉💖',
+    secondaryHint: '對應神秘驚喜任務：Day 2 00:00 蔡寶親手寫的真情告白卡片 ＆ 秘密大禮盒 🎁💖',
     category: 'birthday',
-    badge: '10/17 壽星大日子'
+    badge: '10/17 壽星跨日整點',
+    linkedSurpriseId: 'surp-3'
   },
   {
     id: 'alert-escape-room',
@@ -66,6 +59,16 @@ export const ALERT_SCENARIOS: LiveAlertScenario[] = [
     secondaryHint: '通關密碼提示：蔡寶最愛晴寶 💕',
     category: 'escape',
     badge: '15:00 默契挑戰'
+  },
+  {
+    id: 'alert-french-dinner',
+    triggerTime: '2026-10-17 18:00',
+    timeLabel: '10/17 (六) 18:00',
+    title: '🕯️🎂 晴寶專屬法式慶生盛宴 · 客製手繪寫字盤驚喜',
+    message: '全場燭光灑落，主廚為壽星晴寶精心料理頂級無菜單法式饗宴！壓軸將端上寫著「Happy Birthday 晴寶 💕」的手繪慶生甜點盤與蠟燭～',
+    secondaryHint: '蔡寶為晴寶點亮生日燭光，許下三個最美好的願望 🥂🎂✨',
+    category: 'french',
+    badge: '18:00 法式慶生大餐'
   },
   {
     id: 'alert-bbq-time',
@@ -82,137 +85,296 @@ export const ALERT_SCENARIOS: LiveAlertScenario[] = [
 interface LiveAlertModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onAcknowledgeScenario: (scenarioId: string) => void;
   scenario: LiveAlertScenario | null;
   girlfriendName?: string;
   boyfriendName?: string;
+  dueScenarios?: LiveAlertScenario[];
+  onSelectScenario?: (scenario: LiveAlertScenario) => void;
 }
 
 export const LiveAlertModal: React.FC<LiveAlertModalProps> = ({
   isOpen,
   onClose,
+  onAcknowledgeScenario,
   scenario,
   girlfriendName = '晴寶',
-  boyfriendName = '蔡寶'
+  boyfriendName = '蔡寶',
+  dueScenarios = [],
+  onSelectScenario
 }) => {
+  const [activeTabScenario, setActiveTabScenario] = useState<LiveAlertScenario | null>(scenario);
+
+  // Sync when incoming scenario changes or if active tab is no longer in dueScenarios
   useEffect(() => {
-    if (isOpen && scenario) {
-      // Trigger confetti
-      confetti({
-        particleCount: 60,
-        spread: 80,
-        origin: { y: 0.3 }
-      });
-      // Play a short chime tone using Web Audio
-      try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.6);
-      } catch (e) {
-        // audio context fallback
+    if (scenario) {
+      setActiveTabScenario(scenario);
+    }
+  }, [scenario]);
+
+  useEffect(() => {
+    if (activeTabScenario && dueScenarios.length > 0) {
+      const stillExists = dueScenarios.some(s => s.id === activeTabScenario.id);
+      if (!stillExists) {
+        setActiveTabScenario(dueScenarios[dueScenarios.length - 1]);
       }
     }
-  }, [isOpen, scenario]);
+  }, [dueScenarios, activeTabScenario]);
 
-  if (!isOpen || !scenario) return null;
+  const current = (activeTabScenario && dueScenarios.some(s => s.id === activeTabScenario.id))
+    ? activeTabScenario
+    : (dueScenarios.length > 0 ? dueScenarios[dueScenarios.length - 1] : scenario);
 
-  const getIcon = () => {
-    switch (scenario.category) {
-      case 'dinner':
-        return <UtensilsCrossed className="w-10 h-10 text-rose-500" />;
-      case 'clinic':
-        return <Stethoscope className="w-10 h-10 text-pink-500 animate-pulse" />;
-      case 'birthday':
-        return <Cake className="w-10 h-10 text-amber-500 animate-bounce" />;
-      case 'escape':
-        return <KeyRound className="w-10 h-10 text-indigo-500" />;
-      case 'bbq':
-        return <Flame className="w-10 h-10 text-orange-500 animate-pulse" />;
-      default:
-        return <Bell className="w-10 h-10 text-rose-500" />;
+  useEffect(() => {
+    if (isOpen && current) {
+      try {
+        confetti({
+          particleCount: 70,
+          spread: 80,
+          origin: { y: 0.3 },
+          colors: ['#0284c7', '#38bdf8', '#fbbf24', '#f43f5e']
+        });
+      } catch (e) {}
+
+      // Auto-cleanup confetti canvas after 2.5 seconds so no particles/canvas ever get stuck!
+      const timer = setTimeout(() => {
+        try {
+          confetti.reset();
+        } catch (e) {}
+      }, 2500);
+
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+          }
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          const now = ctx.currentTime || 0;
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.setValueAtTime(880, now + 0.2);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.setValueAtTime(0.001, now + 0.5);
+          osc.start(now);
+          osc.stop(now + 0.5);
+          setTimeout(() => {
+            try { ctx.close(); } catch (err) {}
+          }, 800);
+        }
+      } catch (e) {}
+
+      return () => {
+        clearTimeout(timer);
+        try {
+          confetti.reset();
+        } catch (e) {}
+      };
+    }
+  }, [isOpen, current?.id]);
+
+  if (!isOpen || !current) return null;
+
+  const handleClose = () => {
+    try {
+      confetti.reset();
+    } catch (e) {}
+    onClose();
+  };
+
+  const currentIndex = dueScenarios.findIndex(s => s.id === current.id);
+  const totalCount = dueScenarios.length;
+
+  const handleAcknowledge = () => {
+    if (!current) return;
+    const dismissedId = current.id;
+    const remaining = dueScenarios.filter(s => s.id !== dismissedId);
+
+    // Call parent to dismiss current scenario
+    onAcknowledgeScenario(dismissedId);
+
+    if (remaining.length === 0) {
+      // All due surprises are acknowledged, close modal and clear queue
+      try {
+        confetti.reset();
+      } catch (e) {}
+      onClose();
+    } else {
+      // Switch automatically to the previous unread surprise, or the first remaining
+      const curIdx = dueScenarios.findIndex(s => s.id === dismissedId);
+      const target = curIdx > 0 ? dueScenarios[curIdx - 1] : remaining[0];
+      setActiveTabScenario(target);
+      if (onSelectScenario) onSelectScenario(target);
     }
   };
 
-  const getHeaderBg = () => {
-    switch (scenario.category) {
+  const getIcon = () => {
+    switch (current?.category) {
       case 'dinner':
-        return 'from-rose-500 via-pink-500 to-amber-500';
+        return <UtensilsCrossed className="w-8 h-8 text-[var(--romantic-rose,#0284C7)]" />;
       case 'clinic':
-        return 'from-pink-500 via-rose-500 to-purple-600';
+        return <Stethoscope className="w-8 h-8 text-[var(--romantic-rose,#0284C7)] animate-pulse" />;
       case 'birthday':
-        return 'from-amber-400 via-rose-500 to-pink-500';
+        return <Cake className="w-8 h-8 text-[var(--romantic-gold,#C5A059)] animate-bounce" />;
       case 'escape':
-        return 'from-indigo-600 via-purple-600 to-pink-500';
+        return <KeyRound className="w-8 h-8 text-[var(--romantic-gold,#C5A059)]" />;
+      case 'french':
+      case 'sparkles':
+        return <Sparkles className="w-8 h-8 text-[var(--romantic-gold,#C5A059)] animate-pulse" />;
       case 'bbq':
-        return 'from-orange-500 via-red-500 to-amber-600';
+        return <Flame className="w-8 h-8 text-[var(--romantic-rose,#0284C7)] animate-pulse" />;
       default:
-        return 'from-rose-500 to-pink-600';
+        return <Bell className="w-8 h-8 text-[var(--romantic-rose,#0284C7)]" />;
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < totalCount - 1) {
+      const nextScen = dueScenarios[currentIndex + 1];
+      setActiveTabScenario(nextScen);
+      if (onSelectScenario) onSelectScenario(nextScen);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      const prevScen = dueScenarios[currentIndex - 1];
+      setActiveTabScenario(prevScen);
+      if (onSelectScenario) onSelectScenario(prevScen);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/70 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-rose-100 animate-in zoom-in-95 duration-200">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in cursor-pointer"
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-white w-full max-w-lg rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden border border-[var(--romantic-border,#BAE6FD)] animate-in zoom-in-95 duration-200 text-[var(--romantic-ink,#0F172A)] flex flex-col max-h-[92vh] cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Top Header */}
-        <div className={`p-6 bg-gradient-to-r ${getHeaderBg()} text-white relative`}>
+        <div className="p-5 sm:p-6 btn-romantic-primary text-white relative border-b border-white/20 shrink-0">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
+            title="暫時關閉（稍後可從驚喜柱列再次開啟）"
           >
             <X className="w-5 h-5" />
           </button>
 
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/25 backdrop-blur-md text-xs font-bold tracking-wide uppercase mb-3 border border-white/30">
-            <Bell className="w-3.5 h-3.5 animate-bounce" />
-            <span>{scenario.badge}</span>
+          <div className="flex items-center justify-between pr-8 mb-2">
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/25 backdrop-blur-md text-xs font-bold tracking-wide uppercase border border-white/30">
+              <Bell className="w-3.5 h-3.5 animate-bounce" />
+              <span>{current.badge}</span>
+            </div>
+
+            {totalCount > 1 && (
+              <span className="text-xs font-bold text-white/90 bg-black/20 px-2.5 py-0.5 rounded-full border border-white/20">
+                📬 未讀驚喜 {currentIndex >= 0 ? currentIndex + 1 : 1} / {totalCount}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-lg">
+            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-white border border-white/40 flex items-center justify-center shadow-lg shrink-0">
               {getIcon()}
             </div>
-            <div>
-              <span className="text-xs text-rose-100 font-semibold block">{scenario.timeLabel}</span>
-              <h3 className="text-xl sm:text-2xl font-bold font-serif leading-snug">
-                {scenario.title}
+            <div className="min-w-0">
+              <span className="text-xs text-white/90 font-semibold block">{current.timeLabel}</span>
+              <h3 className="text-lg sm:text-2xl font-bold font-serif leading-snug text-white truncate">
+                {current.title}
               </h3>
             </div>
           </div>
+
+          {/* Queue Tab Buttons if multiple unread alerts exist */}
+          {dueScenarios.length > 1 && (
+            <div className="flex items-center space-x-1.5 mt-3 pt-2.5 border-t border-white/20 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-[11px] text-white/80 shrink-0 font-medium mr-1">未讀柱列:</span>
+              {dueScenarios.map((s, idx) => {
+                const isActive = s.id === current.id;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      setActiveTabScenario(s);
+                      if (onSelectScenario) onSelectScenario(s);
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                      isActive
+                        ? 'bg-white text-[var(--romantic-rose-deep,#0369A1)] shadow-xs scale-105'
+                        : 'bg-white/20 text-white hover:bg-white/30'
+                    }`}
+                  >
+                    #{idx + 1} {s.timeLabel.split(' ')[1] || s.timeLabel}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Content Body */}
-        <div className="p-6 sm:p-8 space-y-5">
-          <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-100 text-stone-800 text-sm sm:text-base leading-relaxed">
-            {scenario.message}
+        <div className="p-5 sm:p-7 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
+          <div className="p-4 rounded-2xl bg-[var(--romantic-card-warm,#F8FAFC)] border border-[var(--romantic-border,#BAE6FD)] text-[var(--romantic-ink,#0F172A)] text-sm sm:text-base leading-relaxed font-serif">
+            {current.message}
           </div>
 
-          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-100 flex items-start space-x-2.5">
-            <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-xs sm:text-sm text-amber-900 leading-normal">
-              {scenario.secondaryHint}
+          <div className="p-3.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] border border-[var(--romantic-border,#BAE6FD)] flex items-start space-x-2.5">
+            <Sparkles className="w-4 h-4 text-[var(--romantic-rose,#0284C7)] shrink-0 mt-0.5" />
+            <p className="text-xs sm:text-sm text-[var(--romantic-rose,#0284C7)] font-medium leading-normal">
+              {current.secondaryHint}
             </p>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center space-x-1.5 text-xs text-rose-500 font-medium">
-              <Heart className="w-4 h-4 fill-rose-500 animate-pulse" />
-              <span>蔡寶的專屬貼心即時提醒</span>
+          {/* Navigation and Actions */}
+          <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            <div className="flex items-center space-x-1.5 text-xs text-[var(--romantic-rose,#0284C7)] font-medium">
+              <Heart className="w-4 h-4 fill-[var(--romantic-rose,#0284C7)] animate-pulse shrink-0" />
+              <span>{boyfriendName} 的專屬貼心即時提醒</span>
             </div>
 
-            <button
-              onClick={onClose}
-              className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm shadow-md shadow-rose-200 transition-all cursor-pointer"
-            >
-              我知道了，出發享受！💖
-            </button>
+            <div className="flex items-center gap-2 justify-end">
+              {/* Optional Preview buttons */}
+              {totalCount > 1 && currentIndex > 0 && (
+                <button
+                  onClick={handlePrev}
+                  className="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[var(--romantic-ink,#0F172A)] text-xs font-bold transition-all cursor-pointer"
+                  title="預覽上一則未讀驚喜"
+                >
+                  ⬅️ 上一則
+                </button>
+              )}
+              {totalCount > 1 && currentIndex < totalCount - 1 && (
+                <button
+                  onClick={handleNext}
+                  className="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-[var(--romantic-ink,#0F172A)] text-xs font-bold transition-all cursor-pointer"
+                  title="預覽下一則未讀驚喜"
+                >
+                  下一則 ➔
+                </button>
+              )}
+
+              {/* Primary Acknowledge Button: Dismisses current & shows previous unread */}
+              <button
+                onClick={handleAcknowledge}
+                className="px-4 sm:px-5 py-2.5 rounded-xl btn-romantic-primary text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center space-x-1 hover:scale-[1.02]"
+                title="確認閱讀，關閉當前驚喜並切換至上一則未讀"
+              >
+                <span>
+                  {totalCount > 1 && currentIndex > 0
+                    ? '我知道了，看上一則 💖'
+                    : totalCount > 1
+                    ? '我知道了，看下一則 💖'
+                    : '我知道了，出發享受！💖'}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

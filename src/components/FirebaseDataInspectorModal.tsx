@@ -75,41 +75,41 @@ export const FirebaseDataInspectorModal: React.FC<FirebaseDataInspectorModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-stone-100 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-[var(--romantic-border,#BAE6FD)] max-h-[90vh] flex flex-col text-[var(--romantic-ink,#0F172A)]">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--romantic-border,#BAE6FD)]">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] flex items-center justify-center">
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-serif text-lg font-bold text-stone-900 flex items-center space-x-2">
+              <h3 className="font-serif text-lg font-bold text-[var(--romantic-ink,#0F172A)] flex items-center space-x-2">
                 <span>Firebase Firestore 雲端資料庫管理</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
                   Live Cloud
                 </span>
               </h3>
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-[var(--romantic-muted,#64748B)]">
                 即時儲存行程、行李清單打勾狀態、小吃投票與預算
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-ink,#0F172A)] hover:bg-[var(--romantic-card-warm,#F8FAFC)] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab navigation */}
-        <div className="flex items-center space-x-2 pt-4 pb-2 border-b border-stone-100 text-xs">
+        <div className="flex items-center space-x-2 pt-4 pb-2 border-b border-[var(--romantic-border,#BAE6FD)] text-xs">
           <button
             onClick={() => setActiveTab('info')}
             className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer flex items-center space-x-1.5 ${
-              activeTab === 'info' ? 'bg-amber-500 text-white font-semibold' : 'text-stone-600 hover:bg-stone-100'
+              activeTab === 'info' ? 'btn-romantic-primary text-white font-semibold' : 'text-[var(--romantic-muted,#64748B)] hover:bg-[var(--romantic-card-warm,#F8FAFC)]'
             }`}
           >
             <Cloud className="w-3.5 h-3.5" />
@@ -118,7 +118,7 @@ export const FirebaseDataInspectorModal: React.FC<FirebaseDataInspectorModalProp
           <button
             onClick={() => setActiveTab('packing')}
             className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer flex items-center space-x-1.5 ${
-              activeTab === 'packing' ? 'bg-amber-500 text-white font-semibold' : 'text-stone-600 hover:bg-stone-100'
+              activeTab === 'packing' ? 'btn-romantic-primary text-white font-semibold' : 'text-[var(--romantic-muted,#64748B)] hover:bg-[var(--romantic-card-warm,#F8FAFC)]'
             }`}
           >
             <ListOrdered className="w-3.5 h-3.5" />
@@ -127,7 +127,7 @@ export const FirebaseDataInspectorModal: React.FC<FirebaseDataInspectorModalProp
           <button
             onClick={() => setActiveTab('json')}
             className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer flex items-center space-x-1.5 ${
-              activeTab === 'json' ? 'bg-amber-500 text-white font-semibold' : 'text-stone-600 hover:bg-stone-100'
+              activeTab === 'json' ? 'btn-romantic-primary text-white font-semibold' : 'text-[var(--romantic-muted,#64748B)] hover:bg-[var(--romantic-card-warm,#F8FAFC)]'
             }`}
           >
             <FileJson className="w-3.5 h-3.5" />
@@ -142,132 +142,109 @@ export const FirebaseDataInspectorModal: React.FC<FirebaseDataInspectorModalProp
             <div className="space-y-4">
               
               {/* Cloud Database Info Box */}
-              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2.5">
-                <div className="font-semibold text-amber-950 flex items-center space-x-1.5">
-                  <ShieldCheck className="w-4 h-4 text-amber-700" />
+              <div className="p-4 rounded-2xl bg-[var(--romantic-rose-light,#F0F9FF)] border border-[var(--romantic-border,#BAE6FD)] space-y-2.5">
+                <div className="font-semibold text-[var(--romantic-rose,#0284C7)] flex items-center space-x-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[var(--romantic-rose,#0284C7)]" />
                   <span>Firestore 資料庫配置詳情</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-700">
-                  <div className="p-2.5 rounded-xl bg-white border border-amber-200/60 font-mono">
-                    <span className="text-stone-400 block text-[10px]">專案 ID (Project ID)</span>
-                    <span className="font-bold text-amber-900">{projectId}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[var(--romantic-ink,#0F172A)]">
+                  <div className="p-2.5 rounded-xl bg-white border border-[var(--romantic-border,#BAE6FD)] font-mono">
+                    <span className="text-[var(--romantic-muted,#64748B)] block text-[10px]">專案 ID (Project ID)</span>
+                    <span className="font-bold text-[var(--romantic-rose,#0284C7)]">{projectId}</span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-white border border-amber-200/60 font-mono">
-                    <span className="text-stone-400 block text-[10px]">資料庫 ID (Database ID)</span>
-                    <span className="font-bold text-amber-900 truncate block" title={databaseId}>
+                  <div className="p-2.5 rounded-xl bg-white border border-[var(--romantic-border,#BAE6FD)] font-mono">
+                    <span className="text-[var(--romantic-muted,#64748B)] block text-[10px]">資料庫 ID (Database ID)</span>
+                    <span className="font-bold text-[var(--romantic-rose,#0284C7)] truncate block" title={databaseId}>
                       {databaseId}
                     </span>
                   </div>
                 </div>
-
-                <div className="p-2.5 rounded-xl bg-white border border-amber-200/60 font-mono">
-                  <span className="text-stone-400 block text-[10px]">主行程與行李儲存路徑 (Document Path)</span>
-                  <span className="font-bold text-rose-700">{collectionPath}</span>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-white border border-amber-200/60 font-mono">
-                  <span className="text-stone-400 block text-[10px]">台南小吃即時投票集合 (Snacks Collection)</span>
-                  <span className="font-bold text-amber-800">{snacksCollectionPath}</span>
-                </div>
               </div>
 
-              {/* Firebase Console Direct Link */}
-              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-                <div className="font-semibold text-stone-800 flex items-center justify-between">
-                  <span>🌐 如何在 Firebase Console 後台檢視 Data？</span>
-                </div>
-                <p className="text-stone-600 leading-relaxed text-[11px]">
-                  您可以直接點擊下方按鈕前往 Google Firebase Console，即可在線上圖形化介面檢視、搜尋與管理全部 Firestore Documents 與 Fields：
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <a
-                    href={consoleUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors"
-                  >
-                    <span>開啟 Firebase Console 檢視資料</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+              {/* Console Link & Actions */}
+              <div className="p-4 rounded-2xl bg-[var(--romantic-card-warm,#F8FAFC)] border border-[var(--romantic-border,#BAE6FD)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[var(--romantic-ink,#0F172A)]">Firebase 控制台直達網址：</span>
                   <button
                     onClick={handleCopyUrl}
-                    className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 font-medium transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-white border border-[var(--romantic-border,#BAE6FD)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] text-xs flex items-center space-x-1 cursor-pointer transition-colors"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copied ? '已複製後台網址' : '複製後台連結'}</span>
+                    <span>{copied ? '已複製！' : '複製網址'}</span>
                   </button>
                 </div>
+                <div className="p-2 bg-white rounded-xl border border-[var(--romantic-border,#BAE6FD)] font-mono text-[11px] text-[var(--romantic-muted,#64748B)] break-all select-all">
+                  {consoleUrl}
+                </div>
+                <a
+                  href={consoleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 rounded-xl btn-romantic-primary text-white font-semibold flex items-center justify-center space-x-1.5 shadow-sm"
+                >
+                  <span>開啟 Firebase 控制台</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
               </div>
 
-              {/* Manual Cloud Sync Actions */}
-              <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-200/70 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div>
-                  <div className="font-semibold text-rose-950">雲端即時同步控制</div>
-                  <div className="text-stone-500 text-[11px]">任何一方打勾或修改時，系統皆會自動同步雲端</div>
-                </div>
+              {/* Manual Trigger Sync */}
+              <div className="p-4 rounded-2xl bg-white border border-[var(--romantic-border,#BAE6FD)] space-y-2">
+                <span className="font-semibold text-[var(--romantic-ink,#0F172A)] block">手動數據同步操作：</span>
                 <div className="flex items-center space-x-2">
-                  <button
-                    onClick={handleManualFetch}
-                    disabled={isSyncing}
-                    className="px-3 py-1.5 rounded-xl bg-white border border-rose-300 text-rose-700 hover:bg-rose-100 font-semibold transition-colors cursor-pointer flex items-center space-x-1"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                    <span>立即拉取最新</span>
-                  </button>
                   <button
                     onClick={handleManualUpload}
                     disabled={isSyncing}
-                    className="px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-semibold shadow-xs transition-colors cursor-pointer flex items-center space-x-1"
+                    className="flex-1 py-2 rounded-xl btn-romantic-primary text-white font-medium flex items-center justify-center space-x-1 cursor-pointer"
                   >
-                    <Cloud className="w-3 h-3" />
-                    <span>立即上傳覆寫</span>
+                    <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                    <span>上傳至雲端</span>
+                  </button>
+                  <button
+                    onClick={handleManualFetch}
+                    disabled={isSyncing}
+                    className="flex-1 py-2 rounded-xl bg-[var(--romantic-card-warm,#F8FAFC)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] font-medium flex items-center justify-center space-x-1 cursor-pointer transition-colors"
+                  >
+                    <Cloud className="w-3.5 h-3.5" />
+                    <span>從雲端拉取</span>
                   </button>
                 </div>
+                {syncStatusMsg && (
+                  <p className="text-[11px] font-semibold text-[var(--romantic-rose,#0284C7)] text-center pt-1 animate-pulse">
+                    {syncStatusMsg}
+                  </p>
+                )}
               </div>
-
-              {syncStatusMsg && (
-                <div className="p-3 rounded-xl bg-amber-100 text-amber-900 font-medium text-center">
-                  {syncStatusMsg}
-                </div>
-              )}
 
             </div>
           )}
 
           {activeTab === 'packing' && (
-            <div className="space-y-3">
-              <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between">
-                <span className="font-semibold text-stone-700">
-                  當前行李清單即時打勾狀態（晴寶與蔡寶共同維護）
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[11px] font-bold">
-                  已完成 {tripData.packingList.filter(i => i.isChecked).length} / {tripData.packingList.length}
-                </span>
-              </div>
-              <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
+            <div className="space-y-2">
+              <p className="text-xs text-[var(--romantic-muted,#64748B)] mb-2">
+                即時比對目前行李清單準備進度，所有打勾動作皆會自動同步寫入 Firestore：
+              </p>
+              <div className="space-y-1.5 max-h-[350px] overflow-y-auto pr-1">
                 {tripData.packingList.map((item) => (
-                  <div 
+                  <div
                     key={item.id}
                     className={`p-2.5 rounded-xl border flex items-center justify-between ${
-                      item.isChecked ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-stone-200'
+                      item.isChecked
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : 'bg-[var(--romantic-card-warm,#F8FAFC)] border-[var(--romantic-border,#BAE6FD)] text-[var(--romantic-muted,#64748B)]'
                     }`}
                   >
                     <div className="flex items-center space-x-2">
-                      <span className={item.isChecked ? 'text-emerald-600 font-bold' : 'text-stone-400'}>
-                        {item.isChecked ? '✅' : '⬜'}
-                      </span>
-                      <span className={item.isChecked ? 'line-through text-stone-400 font-medium' : 'text-stone-800 font-medium'}>
-                        {item.name}
-                      </span>
+                      <span className="font-mono text-xs">{item.isChecked ? '✅' : '⬜'}</span>
+                      <span className="font-medium">{item.name}</span>
                       {item.isSweetheartSpecial && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-pink-100 text-pink-700">
-                          💖 為她準備
+                        <span className="px-1.5 py-0.5 rounded-md bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] text-[9px] font-bold border border-[var(--romantic-border,#BAE6FD)]">
+                          晴寶專屬
                         </span>
                       )}
                     </div>
-                    {item.note && (
-                      <span className="text-[11px] text-stone-500">{item.note}</span>
-                    )}
+                    <span className="text-[10px] font-mono text-[var(--romantic-muted,#64748B)]">
+                      {item.category}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -276,26 +253,12 @@ export const FirebaseDataInspectorModal: React.FC<FirebaseDataInspectorModalProp
 
           {activeTab === 'json' && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-stone-500">
-                <span>Firestore Document Snapshot:</span>
-                <span>大小: ~{(JSON.stringify(tripData).length / 1024).toFixed(1)} KB</span>
-              </div>
-              <pre className="p-3 bg-stone-900 text-emerald-400 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-96 leading-relaxed">
+              <pre className="p-3 bg-slate-900 text-slate-100 rounded-2xl font-mono text-[10px] overflow-x-auto max-h-[350px]">
                 {JSON.stringify(tripData, null, 2)}
               </pre>
             </div>
           )}
 
-        </div>
-
-        {/* Footer */}
-        <div className="pt-4 border-t border-stone-100 flex items-center justify-end">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-semibold transition-colors cursor-pointer"
-          >
-            關閉
-          </button>
         </div>
 
       </div>
