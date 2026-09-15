@@ -220,7 +220,10 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       isUnlocked: false,
       unlockCode: '1017',
       hint: '第一天傍晚的浪漫驚喜晚餐提醒 🍽️',
-      category: 'cake'
+      category: 'cake',
+      activityId: 'act-1-3',
+      dayNumber: 1,
+      sourceType: 'itinerary'
     },
     {
       id: 'surp-2',
@@ -231,7 +234,10 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       isUnlocked: false,
       unlockCode: '1017',
       hint: '第一天深夜洗完澡後的專屬情趣互動 🩺💊',
-      category: 'activity'
+      category: 'activity',
+      activityId: 'act-1-5',
+      dayNumber: 1,
+      sourceType: 'itinerary'
     },
     {
       id: 'surp-3',
@@ -242,7 +248,10 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       isUnlocked: false,
       unlockCode: 'LOVE',
       hint: '10/17 00:00 壽星跨日整點真情告白信與禮物 🎁',
-      category: 'gift'
+      category: 'gift',
+      activityId: 'act-2-1',
+      dayNumber: 2,
+      sourceType: 'itinerary'
     },
     {
       id: 'surp-4',
@@ -253,7 +262,10 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       isUnlocked: false,
       unlockCode: '1017',
       hint: '第二天下午考驗兩人默契與智力的特務冒險 🕵️‍♀️',
-      category: 'activity'
+      category: 'activity',
+      activityId: 'act-2-5',
+      dayNumber: 2,
+      sourceType: 'itinerary'
     },
     {
       id: 'surp-5',
@@ -264,7 +276,10 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       isUnlocked: false,
       unlockCode: '1017',
       hint: '生日當晚的法式甜點燭光浪漫時刻 🕯️🎂',
-      category: 'cake'
+      category: 'cake',
+      activityId: 'act-2-7',
+      dayNumber: 2,
+      sourceType: 'itinerary'
     },
     {
       id: 'surp-6',
@@ -275,9 +290,13 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       isUnlocked: false,
       unlockCode: '1017',
       hint: '第三天晚上的滋滋炭火極上燒肉慶功宴 🥩🔥',
-      category: 'activity'
+      category: 'activity',
+      activityId: 'act-3-3',
+      dayNumber: 3,
+      sourceType: 'itinerary'
     }
   ],
+  standaloneSurprises: [],
   dining: [
     {
       id: 'din-1',

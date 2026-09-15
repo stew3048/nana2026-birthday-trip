@@ -25,7 +25,7 @@ import { BirthdayTripData, ActivityItem, SurpriseItem, DayHighlightCard } from '
 import { loadTripData, saveTripData, syncTripToCloud, subscribeToTripFromCloud, fetchTripFromCloud } from './utils/storage';
 import { TIME_SIMULATOR_PRESETS, sortSurprisesByStartTime, sortScenariosByStartTime } from './utils/timeLock';
 import confetti from 'canvas-confetti';
-import { Heart, Sparkles, Globe, Gift, Bell, UtensilsCrossed, Stethoscope, Cake, Flame, Play, Star, Lock, CheckCircle2, RotateCcw, Plus, Edit3, Trash2, Eye, Clock } from 'lucide-react';
+import { Heart, Sparkles, Gift, Bell, UtensilsCrossed, Stethoscope, Cake, Flame, Play, Star, Lock, CheckCircle2, RotateCcw, Plus, Edit3, Trash2, Eye, Clock } from 'lucide-react';
 
 export default function App() {
   const { isBoyfriend, isGirlfriend, isAuthorizedEditor, isGuest, effectiveTime, simulatedTime, setSimulatedTime } = useAuth();
@@ -158,6 +158,13 @@ export default function App() {
       return prev;
     });
   }, []);
+
+  // Ensure girlfriend or guest is never stranded on organizer-only tabs (themes, budget)
+  useEffect(() => {
+    if (!isBoyfriend && (activeTab === 'themes' || activeTab === 'budget')) {
+      setActiveTab('home');
+    }
+  }, [isBoyfriend, activeTab]);
 
   const handleResetAllSurprisesAndAlerts = () => {
     try {
@@ -861,30 +868,6 @@ export default function App() {
           <p className="text-[var(--romantic-muted,#64748B)]">
             台南 Tainan · {tripData.settings.startDate} ~ {tripData.settings.endDate} · ⭐ 晴寶 10/17 生日快樂！
           </p>
-
-          <div className="pt-2 flex items-center justify-center space-x-3 text-[var(--romantic-muted,#64748B)]">
-            <button
-              onClick={() => setIsNetlifyGuideOpen(true)}
-              className="inline-flex items-center space-x-1 hover:text-[var(--romantic-rose,#0284C7)] transition-colors cursor-pointer"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span>Netlify 上架部署指南</span>
-            </button>
-            <span>·</span>
-            <button
-              onClick={() => setIsPrintGuideOpen(true)}
-              className="hover:text-[var(--romantic-rose,#0284C7)] transition-colors cursor-pointer"
-            >
-              列印手冊 (PDF)
-            </button>
-            <span>·</span>
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="hover:text-[var(--romantic-rose,#0284C7)] transition-colors cursor-pointer"
-            >
-              修改旅行設定
-            </button>
-          </div>
         </div>
       </footer>
 

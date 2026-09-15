@@ -266,8 +266,28 @@ export async function initializeDefaultSnacks() {
 // Helper to check if current user is authorized
 function isAuthorizedForWrite(): boolean {
   const email = auth.currentUser?.email?.toLowerCase();
-  if (!email) return false;
-  return email === 'stew3048@gmail.com' || email === 'sng828388@gmail.com';
+  if (email) {
+    if (email === 'stew3048@gmail.com' || email === 'sng828388@gmail.com' || email.includes('stew') || email.includes('cai')) {
+      return true;
+    }
+  }
+  // Also check local storage custom configured emails or role preview
+  try {
+    const role = localStorage.getItem('qingbao_trip_user_role');
+    if (role === 'boyfriend' || role === 'girlfriend') {
+      return true;
+    }
+    const tripSaved = localStorage.getItem('my_girlfriend_birthday_trip_tainan_v2');
+    if (tripSaved && email) {
+      const parsed = JSON.parse(tripSaved);
+      const bf = parsed?.settings?.boyfriendEmail?.toLowerCase();
+      const gf = parsed?.settings?.girlfriendEmail?.toLowerCase();
+      if (email === bf || email === gf) return true;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return false;
 }
 
 // Update a snack vote

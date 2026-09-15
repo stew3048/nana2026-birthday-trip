@@ -57,6 +57,8 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
     simulatedTime, 
     effectiveTime, 
     setSimulatedTime,
+    boyfriendForceUnlockAll,
+    setBoyfriendForceUnlockAll,
   } = useAuth();
 
   const { theme, setTheme, themeConfig } = useTheme();
@@ -150,7 +152,7 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
                 <div className="absolute left-0 top-full mt-2 w-72 bg-white border-2 border-[var(--romantic-border,#BAE6FD)] rounded-2xl shadow-2xl p-2 z-[60] animate-in fade-in zoom-in-95 max-h-96 overflow-y-auto text-left">
                   <div className="px-3 py-1.5 border-b border-[var(--romantic-border,#BAE6FD)] flex items-center justify-between sticky top-0 bg-white z-10">
                     <span className="font-bold text-[var(--romantic-ink,#0F172A)] text-xs">🎨 挑選手冊風格</span>
-                    {onOpenThemeStudio && (
+                    {isBoyfriend && onOpenThemeStudio && (
                       <button
                         onClick={() => {
                           setShowThemeMenu(false);
@@ -253,26 +255,53 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
             </div>
 
             {/* Time Simulator Button & Dropdown (Strictly hidden for Girlfriend) */}
-            <div className="relative">
+            <div className="flex items-center space-x-1.5">
               <button
-                onClick={() => {
-                  setShowTimeMenu(!showTimeMenu);
-                  setShowThemeMenu(false);
-                }}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition-all cursor-pointer whitespace-nowrap shadow-xs shrink-0 ${
-                  simulatedTime 
-                    ? 'bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] border-[var(--romantic-border,#BAE6FD)] hover:brightness-95' 
-                    : 'bg-white text-[var(--romantic-ink,#0F172A)] border-[var(--romantic-border,#BAE6FD)] hover:bg-[var(--romantic-rose-light,#F0F9FF)]'
+                onClick={() => setBoyfriendForceUnlockAll(!boyfriendForceUnlockAll)}
+                className={`px-2 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1 border transition-all cursor-pointer whitespace-nowrap shadow-xs shrink-0 ${
+                  boyfriendForceUnlockAll
+                    ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                    : 'bg-white text-slate-700 border-[var(--romantic-border,#BAE6FD)] hover:bg-[var(--romantic-rose-light,#F0F9FF)]'
                 }`}
-                title="時光模擬器：測試活動前 1 小時解鎖效果與即時發送驚喜通知給晴寶"
+                title={
+                  boyfriendForceUnlockAll
+                    ? '目前狀態：👑 管理員全解鎖（可檢視並編輯所有未開放行程與主題）。點此切換為時光模擬鎖定模式'
+                    : '目前狀態：🔒 時光鎖定體驗模式（依時光模擬器判定是否解鎖）。點此切換為管理員全解鎖'
+                }
               >
-                <Clock className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)] shrink-0" />
-                <span>時光模擬器</span>
-                <span className="px-1.5 py-0.2 rounded bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] text-[10px] border border-[var(--romantic-border,#BAE6FD)]">
-                  {currentPreset.badge}
-                </span>
-                <ChevronDown className="w-3 h-3 text-[var(--romantic-muted,#64748B)] shrink-0" />
+                {boyfriendForceUnlockAll ? (
+                  <>
+                    <Unlock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span className="hidden sm:inline">👑 全解鎖</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)] shrink-0" />
+                    <span className="hidden sm:inline">🔒 鎖定模擬中</span>
+                  </>
+                )}
               </button>
+
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowTimeMenu(!showTimeMenu);
+                    setShowThemeMenu(false);
+                  }}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition-all cursor-pointer whitespace-nowrap shadow-xs shrink-0 ${
+                    simulatedTime 
+                      ? 'bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] border-[var(--romantic-border,#BAE6FD)] hover:brightness-95' 
+                      : 'bg-white text-[var(--romantic-ink,#0F172A)] border-[var(--romantic-border,#BAE6FD)] hover:bg-[var(--romantic-rose-light,#F0F9FF)]'
+                  }`}
+                  title="時光模擬器：測試活動前 1 小時解鎖效果與即時發送驚喜通知給晴寶"
+                >
+                  <Clock className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)] shrink-0" />
+                  <span>時光模擬器</span>
+                  <span className="px-1.5 py-0.2 rounded bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] text-[10px] border border-[var(--romantic-border,#BAE6FD)]">
+                    {currentPreset.badge}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-[var(--romantic-muted,#64748B)] shrink-0" />
+                </button>
 
               {/* Time Presets Dropdown */}
               {showTimeMenu && (
@@ -380,7 +409,8 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
               )}
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       </div>
     </div>

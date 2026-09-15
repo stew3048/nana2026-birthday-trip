@@ -19,13 +19,14 @@ import {
   KeyRound, 
   Flame,
   ShieldCheck,
-  Edit3
+  Edit3,
+  Lock
 } from 'lucide-react';
 import { BirthdayTripData, LiveAlertScenario, DayHighlightCard } from '../types';
 import { HeroCountdown } from './HeroCountdown';
 import { EditDayHighlightsModal, DEFAULT_DAY_HIGHLIGHTS } from './EditDayHighlightsModal';
 import { useAuth } from '../context/AuthContext';
-import { sortScenariosByStartTime, getShortScenarioTimeTag } from '../utils/timeLock';
+import { sortScenariosByStartTime, getShortScenarioTimeTag, getDayLockSummary } from '../utils/timeLock';
 
 interface HomeViewProps {
   tripData: BirthdayTripData;
@@ -98,31 +99,31 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             {/* Actions: Add New Alert Card & All Scenarios */}
-            <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
               <button
                 onClick={onOpenAddScenario}
-                className="px-3 py-1.5 rounded-xl btn-romantic-primary text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap"
+                className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl btn-romantic-primary text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all flex items-center justify-center space-x-1.5 cursor-pointer whitespace-nowrap"
                 title="新增自訂即時推播驚喜卡片"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5 shrink-0" />
                 <span>➕ 新增驚喜卡片</span>
               </button>
 
               <button
                 onClick={onOpenScenarioPicker}
-                className="px-3 py-1.5 rounded-xl btn-romantic-gold text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all flex items-center space-x-1 cursor-pointer whitespace-nowrap"
+                className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl btn-romantic-gold text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap"
                 title="管理所有預設與自訂推播卡片"
               >
-                <Play className="w-3 h-3 fill-white" />
+                <Play className="w-3 h-3 fill-white shrink-0" />
                 <span>全部卡片管理</span>
               </button>
 
               <button
                 onClick={onResetAlerts}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-all flex items-center space-x-1 cursor-pointer whitespace-nowrap border border-slate-200"
+                className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-all flex items-center justify-center space-x-1 cursor-pointer whitespace-nowrap border border-slate-200 shrink-0"
                 title="清除所有已讀記錄與重置即時驚喜，可重新觸發任何情境"
               >
-                <RotateCcw className="w-3 h-3 text-[var(--romantic-gold,#F59E0B)]" />
+                <RotateCcw className="w-3 h-3 text-[var(--romantic-gold,#F59E0B)] shrink-0" />
                 <span>重置標記</span>
               </button>
             </div>

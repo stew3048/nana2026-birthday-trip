@@ -30,9 +30,9 @@ interface HeaderProps {
   tripData: BirthdayTripData;
   onUpdateTripData: (newData: BirthdayTripData) => void;
   onOpenLoveLetter: () => void;
-  onOpenSettings: () => void;
-  onOpenNetlifyGuide: () => void;
-  onOpenPrintGuide: () => void;
+  onOpenSettings?: () => void;
+  onOpenNetlifyGuide?: () => void;
+  onOpenPrintGuide?: () => void;
   onTriggerSurpriseModal: () => void;
   onOpenLiveAlerts: () => void;
   activeTab: string;
@@ -267,32 +267,6 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
 
                       <button
-                        onClick={() => { onOpenSettings(); setShowPresetMenu(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] flex items-center space-x-2 transition-colors cursor-pointer"
-                      >
-                        <Settings className="w-4 h-4 text-slate-400" />
-                        <span>基本資料與權限設定</span>
-                      </button>
-
-                      <button
-                        onClick={() => { onOpenPrintGuide(); setShowPresetMenu(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] flex items-center space-x-2 transition-colors cursor-pointer"
-                      >
-                        <Printer className="w-4 h-4 text-slate-400" />
-                        <span>列印手冊 / 另存 PDF</span>
-                      </button>
-
-                      <button
-                        onClick={() => { onOpenNetlifyGuide(); setShowPresetMenu(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-amber-50 hover:text-amber-700 flex items-center space-x-2 transition-colors cursor-pointer"
-                      >
-                        <Globe className="w-4 h-4 text-amber-500" />
-                        <span>Netlify 免費上架教學</span>
-                      </button>
-
-                      <div className="border-t border-slate-100 my-1"></div>
-
-                      <button
                         onClick={() => { exportTripToJson(tripData); setShowPresetMenu(false); }}
                         className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition-colors cursor-pointer"
                       >
@@ -463,18 +437,20 @@ export const Header: React.FC<HeaderProps> = ({
             📸 拍立得回憶牆
           </button>
 
-          {/* 🎨 風格試衣間 Theme Studio Tab */}
-          <button
-            onClick={() => setActiveTab('themes')}
-            className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
-              activeTab === 'themes'
-                ? 'btn-romantic-primary font-bold shadow-xs'
-                : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
-            }`}
-          >
-            <Palette className="w-3.5 h-3.5" />
-            <span>🎨 風格試衣間</span>
-          </button>
+          {/* 🎨 風格試衣間 Theme Studio Tab - 僅在蔡寶/管理員視角顯示，晴寶視角維持純淨專注 */}
+          {isBoyfriend && (
+            <button
+              onClick={() => setActiveTab('themes')}
+              className={`px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center space-x-1.5 ${
+                activeTab === 'themes'
+                  ? 'btn-romantic-primary font-bold shadow-xs'
+                  : 'text-slate-600 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] border border-transparent hover:border-[var(--romantic-border,#BAE6FD)]'
+              }`}
+            >
+              <Palette className="w-3.5 h-3.5" />
+              <span>🎨 風格試衣間</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenLoveLetter}

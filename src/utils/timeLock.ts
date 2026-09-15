@@ -63,6 +63,7 @@ export interface DayLockSummary {
   isEntireDayLocked: boolean;
   earliestUnlockTime: Date | null;
   formattedEarliestUnlockTime: string;
+  isUnlocked: boolean;
 }
 
 export function getDayLockSummary(
@@ -76,7 +77,8 @@ export function getDayLockSummary(
       lockedCount: 0,
       isEntireDayLocked: false,
       earliestUnlockTime: null,
-      formattedEarliestUnlockTime: ''
+      formattedEarliestUnlockTime: '',
+      isUnlocked: true
     };
   }
 
@@ -94,6 +96,7 @@ export function getDayLockSummary(
   });
 
   const lockedCount = day.activities.length - unlockedCount;
+  // A day is locked if no activities are unlocked yet (i.e. before 1 hour of the earliest activity)
   const isEntireDayLocked = unlockedCount === 0;
 
   let formattedEarliestUnlockTime = '';
@@ -109,7 +112,8 @@ export function getDayLockSummary(
     lockedCount,
     isEntireDayLocked,
     earliestUnlockTime: earliestUnlock,
-    formattedEarliestUnlockTime
+    formattedEarliestUnlockTime,
+    isUnlocked: !isEntireDayLocked
   };
 }
 
@@ -178,9 +182,15 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
     iso: null
   },
   {
+    id: 'sim_before_trip',
+    label: '9/14 10:00 (出發前一個月 · 行程保密中)',
+    badge: '全行程封存未開放',
+    iso: '2026-09-14T10:00:00'
+  },
+  {
     id: 'd1_before_trip',
-    label: '10/16 14:00 (Day 1 出發前 1 小時)',
-    badge: '解鎖出發行程',
+    label: '10/16 14:00 (Day 1 出發前 1 小時 · 解鎖 Day 1 總結與出發)',
+    badge: '解鎖 Day 1 總結',
     iso: '2026-10-16T14:00:00'
   },
   {
@@ -208,6 +218,12 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
     iso: '2026-10-17T00:00:00'
   },
   {
+    id: 'd2_breakfast_before',
+    label: '10/17 07:30 (Day 2 早餐前 1 小時 · 解鎖 Day 2 總結與早餐)',
+    badge: '解鎖 Day 2 總結',
+    iso: '2026-10-17T07:30:00'
+  },
+  {
     id: 'd2_leather_escape',
     label: '10/17 15:00 (Day 2 密室逃脫特務 🗝️ 默契挑戰通知)',
     badge: '觸發 15:00 密室通知',
@@ -221,9 +237,9 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
   },
   {
     id: 'd3_snacks_tour',
-    label: '10/18 08:45 (Day 3 小吃巡禮前 45 分)',
-    badge: '解鎖 10/18 小吃與奇美',
-    iso: '2026-10-18T08:45:00'
+    label: '10/18 08:30 (Day 3 小吃前 1 小時 · 解鎖 Day 3 總結與小吃)',
+    badge: '解鎖 Day 3 總結',
+    iso: '2026-10-18T08:30:00'
   },
   {
     id: 'd3_bbq_finale',
@@ -421,7 +437,7 @@ export function extractTimestampFromTiming(text: string, fallbackDate: string = 
     hours = 9; minutes = 0;
   } else if (raw.includes('中午') || raw.includes('午餐')) {
     hours = 12; minutes = 0;
-  } else if (raw.includes('下午') || raw.includes('午後') || raw.includes('請半天假') || raw.includes('出發')) {
+  } else if (raw.includes('下午') || raw.includes('午後') || raw.includes('出發')) {
     hours = 15; minutes = 0;
   } else if (raw.includes('傍晚')) {
     hours = 17; minutes = 0;
@@ -462,20 +478,6 @@ export function extractScenarioDateTimeComponents(timing: string, fallbackDate: 
  */
 export function parseScenarioStartTime(scenario: LiveAlertScenario): number {
   if (!scenario) return 0;
-
-  // Specific semantic matching for trip landmarks
-  const combinedText = `${scenario.title || ''} ${scenario.message || ''} ${scenario.badge || ''}`;
-  if (combinedText.includes('請半天假') || combinedText.includes('甜蜜出發') || combinedText.includes('直奔台南')) {
-    // If the user's scenario is "蔡寶請半天假", its scheduled start time is 10/16 15:00
-    // Check if a specific time is also set in triggerTime
-    if (scenario.triggerTime && scenario.triggerTime.includes('2026-10-16')) {
-      const match = scenario.triggerTime.match(/(\d{1,2}):(\d{2})/);
-      if (match) {
-        return new Date(2026, 9, 16, parseInt(match[1], 10), parseInt(match[2], 10), 0, 0).getTime();
-      }
-    }
-    return new Date(2026, 9, 16, 15, 0, 0, 0).getTime();
-  }
 
   // 1. Try triggerTime
   if (scenario.triggerTime) {

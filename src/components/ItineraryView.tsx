@@ -28,14 +28,10 @@ import {
   Star,
   Hourglass,
   ArrowUpDown,
-  ListOrdered,
-  Palette,
-  Check
+  ListOrdered
 } from 'lucide-react';
 import { ActivityCategory, ActivityItem, DayItinerary } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { APP_THEMES } from '../utils/themes';
 import { getActivityLockStatus, getDayLockSummary, sortActivitiesChronologically } from '../utils/timeLock';
 
 interface ItineraryViewProps {
@@ -74,11 +70,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     isGirlfriend, 
     role, 
     effectiveTime, 
-    boyfriendForceUnlockAll 
+    boyfriendForceUnlockAll,
+    setBoyfriendForceUnlockAll
   } = useAuth();
-
-  const { theme, setTheme, themeConfig } = useTheme();
-  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [isSecretRevealed, setIsSecretRevealed] = useState(false);
@@ -114,7 +108,10 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     activities: sortActivitiesChronologically(rawCurrentDay.activities || [])
   } : null;
   const daySummary = currentDay ? getDayLockSummary(currentDay, effectiveTime) : null;
-  const isCurrentDayLockedForGirlfriend = isGirlfriend && !boyfriendForceUnlockAll && (daySummary?.isEntireDayLocked || false);
+  
+  // Time lock is enforced for girlfriend, for guests, or for boyfriend when NOT explicitly force-unlocked (i.e. testing simulator mode)
+  const isLockEnforced = isGirlfriend || role === 'guest' || !boyfriendForceUnlockAll;
+  const isCurrentDayLocked = isLockEnforced && (daySummary?.isEntireDayLocked || false);
 
   const getCategoryBadge = (category: ActivityCategory) => {
     switch (category) {
@@ -356,205 +353,215 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       <div className="bg-gradient-to-r from-[#F8FAFC] via-[#F0F9FF]/60 to-[#FFFDF7] rounded-3xl p-4 sm:p-5 border border-[var(--romantic-border,#BAE6FD)] shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           
-          {/* Day selection tabs with elegant dock container */}
-          <div className="flex items-center space-x-1.5 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 shadow-inner overflow-x-auto no-scrollbar">
-            {itinerary.map((day, idx) => {
-              const isSelected = selectedDayIndex === idx;
-              const summary = getDayLockSummary(day, effectiveTime);
-              const isLocked = isGirlfriend && !boyfriendForceUnlockAll && summary.isEntireDayLocked;
+            {/* Day selection tabs with elegant dock container */}
+            <div className="flex items-center space-x-1.5 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 shadow-inner overflow-x-auto no-scrollbar">
+              {itinerary.map((day, idx) => {
+                const isSelected = selectedDayIndex === idx;
+                const summary = getDayLockSummary(day, effectiveTime);
+                const isDayLocked = isLockEnforced && summary.isEntireDayLocked;
 
-              return (
-                <button
-                  key={day.dayNumber}
-                  onClick={() => setSelectedDayIndex(idx)}
-                  className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 whitespace-nowrap cursor-pointer ${
-                    isSelected
-                      ? 'btn-romantic-primary font-bold shadow-sm'
-                      : 'bg-white/90 hover:bg-white text-slate-700 hover:text-[var(--romantic-rose,#0284C7)] border border-slate-200/60 shadow-2xs'
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>Day {day.dayNumber}</span>
-                  <span className="text-[11px] opacity-80 font-mono">({day.date.slice(5)})</span>
-                  {isLocked && (
-                    <span className="p-0.5 rounded-full bg-[var(--romantic-gold,#F59E0B)] text-white" title="驚喜封存中">
-                      <Lock className="w-2.5 h-2.5" />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={day.dayNumber}
+                    onClick={() => setSelectedDayIndex(idx)}
+                    className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 whitespace-nowrap cursor-pointer ${
+                      isSelected
+                        ? isDayLocked
+                          ? 'bg-slate-800 text-white font-bold shadow-sm'
+                          : 'btn-romantic-primary font-bold shadow-sm'
+                        : isDayLocked
+                          ? 'bg-slate-100 text-slate-500 hover:bg-slate-200/80 border border-slate-200 shadow-2xs'
+                          : 'bg-white/90 hover:bg-white text-slate-700 hover:text-[var(--romantic-rose,#0284C7)] border border-slate-200/60 shadow-2xs'
+                    }`}
+                    title={isDayLocked ? `Day ${day.dayNumber} 尚未開放（預計 ${summary.formattedEarliestUnlockTime} 解鎖）` : `查看 Day ${day.dayNumber} 行程`}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Day {day.dayNumber}</span>
+                    <span className="text-[11px] opacity-80 font-mono">({day.date.slice(5)})</span>
+                    {isDayLocked ? (
+                      <span className="px-1.5 py-0.5 rounded-md bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] border border-[var(--romantic-border,#BAE6FD)] text-[10px] font-bold flex items-center space-x-0.5">
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>尚未開放</span>
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold flex items-center space-x-0.5">
+                        <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                        <span>已開放</span>
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Current role badge & Quick Theme Switcher */}
-          <div className="flex items-center space-x-2 shrink-0">
-            {/* Quick Theme Switcher Dropdown */}
-            <div className="relative">
-              {showThemeDropdown && (
-                <div 
-                  className="fixed inset-0 z-20 bg-transparent" 
-                  onClick={() => setShowThemeDropdown(false)} 
-                />
-              )}
-
-              <button
-                onClick={() => setShowThemeDropdown(!showThemeDropdown)}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] hover:opacity-90 text-[var(--romantic-rose,#0284C7)] text-xs font-semibold border border-[var(--romantic-border,#BAE6FD)] transition-all cursor-pointer shadow-xs"
-                title="切換手冊風格主題"
-              >
-                <Palette className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">手冊風格:</span>
-                <span>{themeConfig.emoji} {themeConfig.shortName}</span>
-                <ChevronDown className="w-3 h-3 opacity-70" />
-              </button>
-
-              {showThemeDropdown && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-[var(--romantic-border,#BAE6FD)] py-2 z-30 animate-in fade-in slide-in-from-top-2 max-h-96 overflow-y-auto">
-                  <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                    <span>🎨 挑選手冊美學風格</span>
-                  </div>
-
-                  <div className="py-1 space-y-0.5">
-                    {APP_THEMES.map((t) => {
-                      const isSelected = t.id === theme;
-                      return (
-                        <button
-                          key={t.id}
-                          onClick={() => {
-                            setTheme(t.id);
-                            setShowThemeDropdown(false);
-                          }}
-                          className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                            isSelected 
-                              ? 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] font-bold' 
-                              : 'text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <span className="text-base">{t.emoji}</span>
-                            <div>
-                              <div className="font-semibold">{t.shortName}</div>
-                              <div className="text-[10px] text-slate-400 font-normal">{t.category}</div>
-                            </div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-[var(--romantic-rose,#0284C7)]" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+            {/* Current role badge */}
+            <div className="flex items-center space-x-2 shrink-0">
+              {isBoyfriend ? (
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] text-xs font-semibold border border-[var(--romantic-border,#BAE6FD)]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)]" />
+                  <span>👑 蔡寶行程管理權限</span>
+                </div>
+              ) : isGirlfriend ? (
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] text-xs font-semibold border border-[var(--romantic-border,#BAE6FD)]">
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
+                  <span>💖 晴寶專屬壽星行程</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-50 text-[var(--romantic-muted,#64748B)] text-xs font-semibold border border-[var(--romantic-border,#E2E8F0)]">
+                  <Lock className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)]" />
+                  <span>👤 訪客唯讀預覽</span>
                 </div>
               )}
             </div>
-
-            {isBoyfriend ? (
-              <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] text-xs font-semibold border border-[var(--romantic-border,#BAE6FD)]">
-                <ShieldCheck className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)]" />
-                <span>👑 蔡寶行程管理權限</span>
-              </div>
-            ) : isGirlfriend ? (
-              <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] text-xs font-semibold border border-[var(--romantic-border,#BAE6FD)]">
-                <Sparkles className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
-                <span>💖 晴寶專屬壽星行程</span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-50 text-[var(--romantic-muted,#64748B)] text-xs font-semibold border border-[var(--romantic-border,#E2E8F0)]">
-                <Lock className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)]" />
-                <span>👤 訪客唯讀預覽</span>
-              </div>
-            )}
           </div>
         </div>
-      </div>
 
-      {/* Selected Day Header Card */}
-      {currentDay && (
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[var(--romantic-border,#BAE6FD)] shadow-sm relative">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center space-x-2 mb-1.5">
-                <span className="px-2.5 py-0.5 rounded-full btn-romantic-primary text-white text-xs font-bold font-mono">
-                  DAY {currentDay.dayNumber}
-                </span>
-                <span className="text-xs font-medium text-[var(--romantic-rose,#0284C7)] flex items-center space-x-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{currentDay.date}</span>
-                </span>
-                {isCurrentDayLockedForGirlfriend && (
-                  <span className="px-2 py-0.5 rounded-full bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] border border-[var(--romantic-border,#BAE6FD)] text-xs font-bold flex items-center space-x-1">
-                    <Lock className="w-3 h-3 text-[var(--romantic-gold,#F59E0B)]" />
-                    <span>驚喜封存中</span>
+        {/* Selected Day Header Card - Locked vs Unlocked */}
+        {currentDay && isCurrentDayLocked ? (
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[var(--romantic-border,#BAE6FD)] shadow-sm relative overflow-hidden">
+            {/* Subtle glow background */}
+            <div className="absolute -right-8 -top-8 w-44 h-44 rounded-full bg-[var(--romantic-gold-light,#FEF3C7)]/60 pointer-events-none blur-2xl" />
+            
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-5 relative z-10">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold font-mono border border-slate-200">
+                    DAY {currentDay.dayNumber}
                   </span>
+                  <span className="text-xs font-semibold text-[var(--romantic-muted,#64748B)] flex items-center space-x-1">
+                    <Calendar className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
+                    <span>{currentDay.date}</span>
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] border border-[var(--romantic-border,#BAE6FD)] text-xs font-bold flex items-center space-x-1">
+                    <Lock className="w-3 h-3 text-[var(--romantic-gold,#F59E0B)]" />
+                    <span>尚未開放 · 敬請期待</span>
+                  </span>
+                </div>
+
+                <div>
+                  <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--romantic-ink,#0F172A)] flex items-center space-x-2">
+                    <span>🔒 Day {currentDay.dayNumber} 尚未開放 · 敬請期待</span>
+                  </h2>
+                  <p className="text-[var(--romantic-muted,#64748B)] text-sm mt-2 max-w-2xl leading-relaxed">
+                    「🤫 晴寶小仙女請稍候！蔡寶為妳用心策劃的每日主題、穿搭提醒與時間軸行程，將在<strong>當日第一個活動開始前 1 小時</strong>準時為妳解鎖揭開，保留滿滿的期待與儀式感 ✨」
+                  </p>
+                </div>
+
+                {daySummary?.formattedEarliestUnlockTime && (
+                  <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] border border-[var(--romantic-border,#BAE6FD)] text-xs font-semibold text-[var(--romantic-rose-deep,#0369A1)]">
+                    <Clock className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)] shrink-0" />
+                    <span>
+                      預計解鎖時間：<strong>{daySummary.formattedEarliestUnlockTime}</strong> (首個行程前 1 小時自動解鎖揭曉)
+                    </span>
+                  </div>
                 )}
               </div>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--romantic-ink,#0F172A)]">
-                {currentDay.themeTitle}
-              </h2>
-              {currentDay.dayDescription && (
-                <p className="text-[var(--romantic-muted,#64748B)] text-sm mt-1.5 max-w-2xl leading-relaxed">
-                  {currentDay.dayDescription}
-                </p>
-              )}
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {currentDay.weatherForecast && (
-                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white border border-[var(--romantic-border,#BAE6FD)] text-[var(--romantic-gold,#F59E0B)] text-xs font-medium shadow-2xs">
-                  <CloudSun className="w-4 h-4 text-[var(--romantic-gold,#F59E0B)]" />
-                  <span>{currentDay.weatherForecast}</span>
+              <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end gap-2 shrink-0">
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-medium">
+                  <Shirt className="w-3.5 h-3.5 text-slate-400" />
+                  <span>穿搭天氣：解鎖時揭曉</span>
                 </div>
-              )}
 
-              {currentDay.todayOutfitTip && (
-                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] border border-[var(--romantic-border,#BAE6FD)] text-[var(--romantic-rose,#0284C7)] text-xs font-medium shadow-2xs">
-                  <Shirt className="w-4 h-4 text-[var(--romantic-rose,#0284C7)]" />
-                  <span>{currentDay.todayOutfitTip}</span>
-                </div>
-              )}
-
-              {isBoyfriend && (
-                <button
-                  onClick={handleOpenEditDayTheme}
-                  className="p-2 rounded-xl bg-white hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] text-xs flex items-center space-x-1 shadow-2xs cursor-pointer transition-colors"
-                  title="編輯此日主題與穿搭天氣"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">編輯主題</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notice Banner if this Day is currently locked for Girlfriend */}
-      {isCurrentDayLockedForGirlfriend && (
-        <div className="bg-[var(--romantic-gold-light,#FEF3C7)] rounded-2xl p-5 border border-[var(--romantic-border,#BAE6FD)] shadow-sm animate-in fade-in">
-          <div className="flex items-start space-x-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-[var(--romantic-gold,#F59E0B)] text-white flex items-center justify-center shrink-0 shadow-md">
-              <Lock className="w-5 h-5 animate-pulse" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <h4 className="font-serif font-bold text-[var(--romantic-gold,#F59E0B)] text-base">
-                  🔒 Day {currentDay.dayNumber} ({currentDay.date}) 專屬驚喜行程保密中
-                </h4>
-                <span className="px-2 py-0.5 rounded-full bg-white text-[var(--romantic-gold,#F59E0B)] text-xs font-bold border border-[var(--romantic-border,#BAE6FD)]">
-                  活動前 1 小時揭曉
-                </span>
+                {isBoyfriend && (
+                  <button
+                    onClick={() => setBoyfriendForceUnlockAll(true)}
+                    className="px-3 py-1.5 rounded-xl bg-[var(--romantic-gold-light,#FEF3C7)] hover:bg-[var(--romantic-gold-light,#FEF3C7)]/80 text-[var(--romantic-gold,#F59E0B)] border border-[var(--romantic-border,#BAE6FD)] text-xs font-bold flex items-center space-x-1 cursor-pointer transition-colors shadow-2xs"
+                    title="切換至管理員全解鎖模式，直接檢視與編輯完整主題文案"
+                  >
+                    <Unlock className="w-3.5 h-3.5" />
+                    <span>管理員全解鎖編輯</span>
+                  </button>
+                )}
               </div>
-              <p className="text-xs text-[var(--romantic-ink,#0F172A)] mt-1 leading-relaxed">
-                「🤫 晴寶小仙女請稍候！{currentDay.date} 生日大日子的行程將在每個活動開始前 1 小時準時為妳解鎖揭開，保留滿滿的期待與儀式感 ✨」
-              </p>
-              {daySummary?.formattedEarliestUnlockTime && (
-                <p className="text-[11px] font-semibold text-[var(--romantic-rose,#0284C7)] mt-2 flex items-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
-                  <span>首個行程預計於 <strong>{daySummary.formattedEarliestUnlockTime}</strong> 自動解鎖揭曉！</span>
-                </p>
-              )}
             </div>
           </div>
-        </div>
-      )}
+        ) : currentDay ? (
+          <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[var(--romantic-border,#BAE6FD)] shadow-sm relative">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center space-x-2 mb-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full btn-romantic-primary text-white text-xs font-bold font-mono">
+                    DAY {currentDay.dayNumber}
+                  </span>
+                  <span className="text-xs font-medium text-[var(--romantic-rose,#0284C7)] flex items-center space-x-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{currentDay.date}</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center space-x-1">
+                    <Sparkles className="w-3 h-3 text-emerald-600" />
+                    <span>✨ 已解鎖</span>
+                  </span>
+                </div>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--romantic-ink,#0F172A)]">
+                  {currentDay.themeTitle}
+                </h2>
+                {currentDay.dayDescription && (
+                  <p className="text-[var(--romantic-muted,#64748B)] text-sm mt-1.5 max-w-2xl leading-relaxed">
+                    {currentDay.dayDescription}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {currentDay.weatherForecast && (
+                  <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white border border-[var(--romantic-border,#BAE6FD)] text-[var(--romantic-gold,#F59E0B)] text-xs font-medium shadow-2xs">
+                    <CloudSun className="w-4 h-4 text-[var(--romantic-gold,#F59E0B)]" />
+                    <span>{currentDay.weatherForecast}</span>
+                  </div>
+                )}
+
+                {currentDay.todayOutfitTip && (
+                  <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] border border-[var(--romantic-border,#BAE6FD)] text-[var(--romantic-rose,#0284C7)] text-xs font-medium shadow-2xs">
+                    <Shirt className="w-4 h-4 text-[var(--romantic-rose,#0284C7)]" />
+                    <span>{currentDay.todayOutfitTip}</span>
+                  </div>
+                )}
+
+                {isBoyfriend && (
+                  <button
+                    onClick={handleOpenEditDayTheme}
+                    className="p-2 rounded-xl bg-white hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] text-xs flex items-center space-x-1 shadow-2xs cursor-pointer transition-colors"
+                    title="編輯此日主題與穿搭天氣"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">編輯主題</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Notice Banner if this Day is currently locked */}
+        {isCurrentDayLocked && currentDay && (
+          <div className="bg-[var(--romantic-gold-light,#FEF3C7)] rounded-2xl p-5 border border-[var(--romantic-border,#BAE6FD)] shadow-sm animate-in fade-in">
+            <div className="flex items-start space-x-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-[var(--romantic-gold,#F59E0B)] text-white flex items-center justify-center shrink-0 shadow-md">
+                <Lock className="w-5 h-5 animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-serif font-bold text-[var(--romantic-gold,#F59E0B)] text-base">
+                    🔒 Day {currentDay.dayNumber} ({currentDay.date}) 專屬驚喜行程保密中
+                  </h4>
+                  <span className="px-2 py-0.5 rounded-full bg-white text-[var(--romantic-gold,#F59E0B)] text-xs font-bold border border-[var(--romantic-border,#BAE6FD)]">
+                    活動前 1 小時揭曉
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--romantic-ink,#0F172A)] mt-1 leading-relaxed">
+                  「🤫 晴寶小仙女請稍候！{currentDay.date} 專屬行程將在每個活動開始前 1 小時準時為妳解鎖揭開，保留滿滿的期待與儀式感 ✨」
+                </p>
+                {daySummary?.formattedEarliestUnlockTime && (
+                  <p className="text-[11px] font-semibold text-[var(--romantic-rose,#0284C7)] mt-2 flex items-center space-x-1">
+                    <Clock className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
+                    <span>首個行程預計於 <strong>{daySummary.formattedEarliestUnlockTime}</strong> 自動解鎖揭曉！</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Activities Timeline */}
       <div className="space-y-4">
@@ -596,8 +603,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               const badge = getCategoryBadge(act.category);
               const lockStatus = getActivityLockStatus(currentDay.date, act.time, effectiveTime);
               
-              const isTimeLocked = isGirlfriend && !boyfriendForceUnlockAll && !lockStatus.isUnlocked;
-              const isHiddenSurprise = act.isSecretSurprise && isGirlfriend && !boyfriendForceUnlockAll;
+              const isTimeLocked = isLockEnforced && !lockStatus.isUnlocked;
+              const isHiddenSurprise = act.isSecretSurprise && isLockEnforced;
 
               if (isTimeLocked) {
                 // RENDER LOCKED MYSTERY CARD FOR GIRLFRIEND

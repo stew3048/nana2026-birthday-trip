@@ -49,6 +49,8 @@ export interface SurpriseItem {
   category: 'gift' | 'cake' | 'activity' | 'memory' | 'letter';
   activityId?: string; // linked to Itinerary ActivityItem
   dayNumber?: number;
+  isStandalone?: boolean; // true if created independently in surprise tasks
+  sourceType?: 'itinerary' | 'standalone';
 }
 
 export interface DiningItem {
@@ -182,6 +184,7 @@ export interface BirthdayTripData {
   settings: TripSettings;
   itinerary: DayItinerary[];
   surprises: SurpriseItem[];
+  standaloneSurprises?: SurpriseItem[];
   dining: DiningItem[];
   packingList: PackingItem[];
   expenses: ExpenseItem[];

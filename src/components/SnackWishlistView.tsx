@@ -28,12 +28,47 @@ interface SnackWishlistViewProps {
   boyfriendName: string;
 }
 
+// Helper to normalize any snack item safely with guaranteed fallback values
+function sanitizeSnack(s: any): SnackVoteItem {
+  if (!s || typeof s !== 'object') {
+    return {
+      id: 'snack-' + Math.random().toString(36).slice(2, 9),
+      name: '私房小吃',
+      category: 'savory',
+      recommendedSpots: '台南市區知名店家',
+      status: 'want',
+      girlfriendVote: null,
+      boyfriendVote: null,
+      votedBy: undefined,
+      likesCount: 0,
+      locationArea: '中西區',
+      notes: '',
+      isCustomAdded: false
+    };
+  }
+  return {
+    id: String(s.id || 'snack-' + Math.random().toString(36).slice(2, 9)),
+    name: String(s.name || '私房小吃'),
+    category: (s.category === 'sweet' || s.category === 'drink') ? s.category : 'savory',
+    recommendedSpots: String(s.recommendedSpots || '台南知名老店'),
+    status: (s.status === 'must' || s.status === 'maybe' || s.status === 'pass') ? s.status : 'want',
+    girlfriendVote: s.girlfriendVote || null,
+    boyfriendVote: s.boyfriendVote || null,
+    votedBy: s.votedBy || undefined,
+    likesCount: typeof s.likesCount === 'number' ? s.likesCount : 0,
+    locationArea: String(s.locationArea || '台南市區'),
+    notes: String(s.notes || ''),
+    isCustomAdded: Boolean(s.isCustomAdded),
+    customAddedBy: s.customAddedBy ? String(s.customAddedBy) : undefined
+  };
+}
+
 export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
   girlfriendName = '晴寶',
   boyfriendName = '蔡寶'
 }) => {
   const { isAuthorizedEditor, requireAuthOrPrompt, isBoyfriend, isGirlfriend } = useAuth();
-  const [snacks, setSnacks] = useState<SnackVoteItem[]>(DEFAULT_TAINAN_SNACKS);
+  const [snacks, setSnacks] = useState<SnackVoteItem[]>(() => DEFAULT_TAINAN_SNACKS.map(sanitizeSnack));
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
@@ -58,12 +93,54 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
   const [newNotes, setNewNotes] = useState('');
 
   useEffect(() => {
+    // Load any locally cached custom snacks as baseline
+    try {
+      const cached = localStorage.getItem('qingbao_trip_custom_snacks_fallback');
+      if (cached) {
+        const parsed: SnackVoteItem[] = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSnacks(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const newCustoms = parsed.filter(p => !existingIds.has(p.id));
+            return [...newCustoms, ...prev];
+          });
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
     setIsSyncing(true);
     const unsub = subscribeToSnacks(
       (items) => {
-        setSnacks(items);
-        setIsFirebaseConnected(true);
-        setIsSyncing(false);
+        try {
+          const safeRemoteItems = (Array.isArray(items) ? items : []).map(sanitizeSnack);
+          let merged = safeRemoteItems;
+          try {
+            const cached = localStorage.getItem('qingbao_trip_custom_snacks_fallback');
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const safeParsed = parsed.map(sanitizeSnack);
+                const remoteIds = new Set(safeRemoteItems.map(p => p.id));
+                const remoteNames = new Set(safeRemoteItems.map(p => (p.name || '').trim().toLowerCase()).filter(Boolean));
+                const unmerged = safeParsed.filter(p => !remoteIds.has(p.id) && !remoteNames.has((p.name || '').trim().toLowerCase()));
+                if (unmerged.length > 0) {
+                  merged = [...unmerged, ...safeRemoteItems];
+                }
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          setSnacks(merged.map(sanitizeSnack));
+          setIsFirebaseConnected(true);
+        } catch (err) {
+          console.warn('Error processing snacks update:', err);
+        } finally {
+          setIsSyncing(false);
+        }
       },
       (err) => {
         console.warn('Firebase sync notice:', err);
@@ -174,8 +251,27 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
     };
 
     setIsSyncing(true);
-    await addCustomSnack(newSnackItem);
+    const addedItem = await addCustomSnack(newSnackItem);
     setIsSyncing(false);
+
+    // Optimistically update local state immediately so user sees the new item right away!
+    const itemToAppend: SnackVoteItem = addedItem || {
+      ...newSnackItem,
+      id: 'snack-custom-' + Date.now(),
+      updatedAt: new Date().toISOString()
+    };
+    setSnacks(prev => {
+      if (prev.some(s => s.id === itemToAppend.id || s.name.trim().toLowerCase() === itemToAppend.name.trim().toLowerCase())) {
+        return prev;
+      }
+      const updated = [itemToAppend, ...prev];
+      try {
+        localStorage.setItem('qingbao_trip_custom_snacks_fallback', JSON.stringify(updated.filter(s => s.isCustomAdded)));
+      } catch (e) {
+        // ignore
+      }
+      return updated;
+    });
 
     setNewName('');
     setNewSpots('');
@@ -194,19 +290,30 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
       return;
     }
     if (confirm(`確定要刪除「${name}」嗎？`)) {
+      setSnacks(prev => {
+        const updated = prev.filter(s => s.id !== id);
+        try {
+          localStorage.setItem('qingbao_trip_custom_snacks_fallback', JSON.stringify(updated.filter(s => s.isCustomAdded)));
+        } catch (e) {
+          // ignore
+        }
+        return updated;
+      });
       setIsSyncing(true);
       await deleteSnackItem(id);
       setIsSyncing(false);
     }
   };
 
-  const filteredSnacks = snacks.filter(s => {
+  const filteredSnacks = (snacks || []).filter(s => {
+    if (!s) return false;
     const matchCat = selectedCategory === 'all' || s.category === selectedCategory;
-    const matchSearch = searchQuery === '' || 
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.recommendedSpots.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.locationArea && s.locationArea.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchCat && matchSearch;
+    const q = (searchQuery || '').trim().toLowerCase();
+    if (!q) return matchCat;
+    const nameMatch = (s.name || '').toLowerCase().includes(q);
+    const spotMatch = (s.recommendedSpots || '').toLowerCase().includes(q);
+    const locMatch = (s.locationArea || '').toLowerCase().includes(q);
+    return matchCat && (nameMatch || spotMatch || locMatch);
   });
 
   const wantCount = snacks.filter(s => s.status === 'want' || s.status === 'must').length;
@@ -386,6 +493,11 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
                         👫 兩人雙向指定
                       </span>
                     )}
+                    {snack.isCustomAdded && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        ✨ {snack.customAddedBy ? `${snack.customAddedBy}新增` : '私房新增'}
+                      </span>
+                    )}
                   </div>
                   <h3 className="font-serif text-lg font-bold text-[var(--romantic-ink,#0F172A)] mt-1.5">
                     {snack.name}
@@ -394,7 +506,7 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
 
                 <div className="flex items-center space-x-1">
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(snack.recommendedSpots.split('/')[0] + ' 台南')}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((snack.recommendedSpots || snack.name || '台南美食').split('/')[0] || snack.name || '台南美食').trim() + ' 台南')}`}
                     target="_blank"
                     rel="noreferrer"
                     className="p-2 rounded-xl text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] transition-colors"
@@ -403,7 +515,7 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
                     <MapPin className="w-4 h-4" />
                   </a>
 
-                  {isBoyfriend && (
+                  {(isBoyfriend || snack.isCustomAdded) && (
                     <button
                       onClick={() => handleDeleteSnack(snack.id, snack.name)}
                       className="p-1.5 rounded-xl text-[var(--romantic-muted,#64748B)] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
@@ -418,7 +530,7 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
               {/* Recommended spots */}
               <div className="mt-2 text-xs sm:text-sm font-medium text-slate-700 flex items-center space-x-1">
                 <span className="text-[var(--romantic-rose,#0284C7)] font-bold">推薦店家：</span>
-                <span className="text-[var(--romantic-ink,#0F172A)]">{snack.recommendedSpots}</span>
+                <span className="text-[var(--romantic-ink,#0F172A)]">{snack.recommendedSpots || '在地老店推薦'}</span>
               </div>
 
               {/* Notes / Special remarks */}
