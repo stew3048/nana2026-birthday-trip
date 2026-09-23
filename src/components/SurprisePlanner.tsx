@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gift, Lock, Unlock, Plus, Trash2, Edit3, Sparkles, Heart, CheckCircle2, Key, ShieldCheck, Clock, RotateCcw, Bell } from 'lucide-react';
+import { Gift, Lock, Unlock, Plus, Trash2, Edit3, Sparkles, Heart, CheckCircle2, Key, ShieldCheck, Clock, RotateCcw, Bell, Calendar, X, Check } from 'lucide-react';
 import { SurpriseItem } from '../types';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
@@ -87,19 +87,42 @@ export const SurprisePlanner: React.FC<SurprisePlannerProps> = ({
     setEditingSurprise({
       id: 'surp-' + Date.now(),
       title: '',
-      timing: 'Day 2 晚上',
-      location: '客房內 / 餐廳',
+      timing: 'Day 2 18:00 (10/17)',
+      date: '2026-10-17',
+      time: '18:00',
+      dayNumber: 2,
+      location: '煙波客房 / 浪漫餐廳',
       description: '',
       isUnlocked: false,
       unlockCode: '0520',
-      hint: '神秘浪漫時刻，等妳揭曉 💕',
+      hint: '神秘浪漫時刻，等妳親自揭曉 💕',
       category: 'gift'
     });
     setIsEditing(true);
   };
 
   const handleOpenEdit = (item: SurpriseItem) => {
-    setEditingSurprise({ ...item });
+    let date = item.date;
+    let time = item.time;
+    if (!date) {
+      if (item.dayNumber === 1 || (item.timing && (item.timing.includes('Day 1') || item.timing.includes('10/16')))) {
+        date = '2026-10-16';
+      } else if (item.dayNumber === 3 || (item.timing && (item.timing.includes('Day 3') || item.timing.includes('10/18')))) {
+        date = '2026-10-18';
+      } else {
+        date = '2026-10-17';
+      }
+    }
+    if (!time) {
+      const match = (item.timing || '').match(/(\d{1,2}:\d{2})/);
+      time = match ? match[1] : '18:00';
+    }
+    setEditingSurprise({
+      ...item,
+      date,
+      time,
+      dayNumber: item.dayNumber || (date === '2026-10-16' ? 1 : date === '2026-10-18' ? 3 : 2)
+    });
     setIsEditing(true);
   };
 
@@ -386,16 +409,41 @@ export const SurprisePlanner: React.FC<SurprisePlannerProps> = ({
 
       {/* Edit / Add Surprise Modal */}
       {isEditing && editingSurprise && (
-        <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-[var(--romantic-border,#BAE6FD)] animate-in fade-in duration-150">
-            <h3 className="font-serif text-xl font-bold text-[var(--romantic-ink,#0F172A)] mb-4">
-              🎁 規劃神秘生日驚喜
-            </h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[var(--romantic-border,#BAE6FD)] max-h-[90vh] sm:max-h-[88vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-[var(--romantic-ink,#0F172A)]">
+            
+            {/* Modal Header */}
+            <div className="px-5 sm:px-6 py-4 border-b border-[var(--romantic-border,#BAE6FD)] flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] flex items-center justify-center text-base shadow-2xs">
+                  🎁
+                </div>
+                <div>
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-[var(--romantic-ink,#0F172A)]">
+                    {editingSurprise.id?.startsWith('surp-custom') || !editingSurprise.id ? '新增神秘生日驚喜' : '編輯神秘生日驚喜'}
+                  </h3>
+                  <p className="text-[11px] text-[var(--romantic-muted,#64748B)]">
+                    為晴寶規劃專屬驚喜，設定發生時機與解鎖提示
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsEditing(false); setEditingSurprise(null); }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="關閉"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-            <div className="space-y-4 text-xs text-[var(--romantic-ink,#0F172A)]">
+            {/* Scrollable Form Body */}
+            <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-4 text-xs text-[var(--romantic-ink,#0F172A)]">
+              {/* Surprise Title */}
               <div>
-                <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
-                  驚喜名稱 (解鎖後顯示) *
+                <label className="block text-xs font-bold text-[var(--romantic-ink,#0F172A)] mb-1.5 flex items-center space-x-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
+                  <span>驚喜名稱 (解鎖後顯示) *</span>
                 </label>
                 <input
                   type="text"
@@ -406,19 +454,161 @@ export const SurprisePlanner: React.FC<SurprisePlannerProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Date and Time Selection */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-[var(--romantic-border,#BAE6FD)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[var(--romantic-ink,#0F172A)] flex items-center space-x-1.5">
+                    <Calendar className="w-4 h-4 text-[var(--romantic-rose,#0284C7)]" />
+                    <span>發生日期與時間 (按時間排序依據) *</span>
+                  </label>
+                  <span className="text-[10px] text-[var(--romantic-rose-deep,#0369A1)] font-mono font-bold">
+                    Day {editingSurprise.dayNumber || 2} · {editingSurprise.time || '18:00'}
+                  </span>
+                </div>
+
+                {/* Day selector shortcuts */}
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
-                    發生時機
+                  <div className="text-[11px] text-[var(--romantic-muted,#64748B)] mb-1">
+                    快速選擇行程日：
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { dayNum: 1, date: '2026-10-16', label: 'Day 1 · 10/16 (五)' },
+                      { dayNum: 2, date: '2026-10-17', label: 'Day 2 · 10/17 🎂' },
+                      { dayNum: 3, date: '2026-10-18', label: 'Day 3 · 10/18 (日)' }
+                    ].map((d) => {
+                      const isSelected = editingSurprise.date === d.date || editingSurprise.dayNumber === d.dayNum;
+                      return (
+                        <button
+                          key={d.dayNum}
+                          type="button"
+                          onClick={() => {
+                            const newDate = d.date;
+                            const newDayNum = d.dayNum;
+                            const newTiming = `Day ${newDayNum} ${editingSurprise.time || '18:00'} (${d.date.slice(5).replace('-', '/')})`;
+                            setEditingSurprise({
+                              ...editingSurprise,
+                              date: newDate,
+                              dayNumber: newDayNum,
+                              timing: newTiming
+                            });
+                          }}
+                          className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                            isSelected
+                              ? 'bg-[var(--romantic-rose,#0284C7)] text-white border-transparent shadow-xs'
+                              : 'bg-white hover:bg-slate-100 text-[var(--romantic-ink,#0F172A)] border-slate-200'
+                          }`}
+                        >
+                          {d.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Date & Time Picker inputs */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[var(--romantic-muted,#64748B)] mb-1">
+                      選擇日期
+                    </label>
+                    <input
+                      type="date"
+                      value={editingSurprise.date || '2026-10-17'}
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        const dayNum = newDate === '2026-10-16' ? 1 : newDate === '2026-10-18' ? 3 : 2;
+                        const newTiming = `Day ${dayNum} ${editingSurprise.time || '18:00'} (${newDate.slice(5).replace('-', '/')})`;
+                        setEditingSurprise({
+                          ...editingSurprise,
+                          date: newDate,
+                          dayNumber: dayNum,
+                          timing: newTiming
+                        });
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] text-xs font-mono font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[var(--romantic-muted,#64748B)] mb-1">
+                      選擇時間
+                    </label>
+                    <input
+                      type="time"
+                      value={editingSurprise.time || '18:00'}
+                      onChange={(e) => {
+                        const newTime = e.target.value;
+                        const dayNum = editingSurprise.dayNumber || 2;
+                        const dateStr = editingSurprise.date ? ` (${editingSurprise.date.slice(5).replace('-', '/')})` : '';
+                        const newTiming = `Day ${dayNum} ${newTime}${dateStr}`;
+                        setEditingSurprise({
+                          ...editingSurprise,
+                          time: newTime,
+                          timing: newTiming
+                        });
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] text-xs font-mono font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Time Shortcuts */}
+                <div>
+                  <div className="text-[11px] text-[var(--romantic-muted,#64748B)] mb-1">
+                    常用時段快捷填入：
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {[
+                      { time: '00:00', label: '00:00 跨日整點' },
+                      { time: '08:30', label: '08:30 早晨' },
+                      { time: '12:00', label: '12:00 午餐' },
+                      { time: '15:00', label: '15:00 午後' },
+                      { time: '18:00', label: '18:00 晚餐' },
+                      { time: '20:30', label: '20:30 夜間放鬆' },
+                      { time: '23:00', label: '23:00 深夜特診' }
+                    ].map((t) => (
+                      <button
+                        key={t.time}
+                        type="button"
+                        onClick={() => {
+                          const dayNum = editingSurprise.dayNumber || 2;
+                          const dateStr = editingSurprise.date ? ` (${editingSurprise.date.slice(5).replace('-', '/')})` : '';
+                          setEditingSurprise({
+                            ...editingSurprise,
+                            time: t.time,
+                            timing: `Day ${dayNum} ${t.time}${dateStr}`
+                          });
+                        }}
+                        className={`text-[10px] px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                          editingSurprise.time === t.time
+                            ? 'bg-sky-100 text-sky-800 border-sky-300 font-bold'
+                            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Timing text display & fine-tuning */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-[var(--romantic-muted,#64748B)] mb-1">
+                    卡片顯示時機文字 (自動同步，亦可自行微調)
                   </label>
                   <input
                     type="text"
-                    value={editingSurprise.timing}
+                    value={editingSurprise.timing || ''}
                     onChange={(e) => setEditingSurprise({ ...editingSurprise, timing: e.target.value })}
-                    placeholder="例如：Day 2 23:00"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
+                    placeholder="例如：Day 2 18:00 (10/17)"
+                    className="w-full px-3 py-1.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] text-xs font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)]"
                   />
                 </div>
+              </div>
+
+              {/* Location & Category */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
                     地點
@@ -427,9 +617,37 @@ export const SurprisePlanner: React.FC<SurprisePlannerProps> = ({
                     type="text"
                     value={editingSurprise.location}
                     onChange={(e) => setEditingSurprise({ ...editingSurprise, location: e.target.value })}
-                    placeholder="例如：煙波客房"
+                    placeholder="例如：煙波客房 / 浪漫餐廳"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                    驚喜類型
+                  </label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[
+                      { key: 'gift', label: '🎁 禮物' },
+                      { key: 'cake', label: '🎂 慶生' },
+                      { key: 'activity', label: '🗝️ 冒險' },
+                      { key: 'letter', label: '💌 走心' },
+                      { key: 'memory', label: '📸 回憶' }
+                    ].map((cat) => (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => setEditingSurprise({ ...editingSurprise, category: cat.key as any })}
+                        className={`py-1 px-1.5 rounded-lg text-[11px] font-medium border transition-all cursor-pointer text-center ${
+                          editingSurprise.category === cat.key
+                            ? 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose-deep,#0369A1)] border-[var(--romantic-rose,#0284C7)] font-bold shadow-xs'
+                            : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -473,20 +691,22 @@ export const SurprisePlanner: React.FC<SurprisePlannerProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-[var(--romantic-border,#BAE6FD)]">
+            {/* Modal Sticky Footer */}
+            <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-[var(--romantic-border,#BAE6FD)] flex items-center justify-end space-x-3 shrink-0">
               <button
                 type="button"
                 onClick={() => { setIsEditing(false); setEditingSurprise(null); }}
-                className="px-4 py-2 rounded-xl text-[var(--romantic-muted,#64748B)] hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-xs font-medium cursor-pointer"
+                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200 text-xs font-medium cursor-pointer"
               >
                 取消
               </button>
               <button
                 type="button"
                 onClick={handleSaveSurprise}
-                className="px-5 py-2 rounded-xl btn-romantic-primary text-white text-xs font-medium cursor-pointer shadow-xs"
+                className="px-5 py-2 rounded-xl btn-romantic-primary text-white text-xs font-bold cursor-pointer shadow-md flex items-center space-x-1.5"
               >
-                儲存驚喜
+                <Check className="w-4 h-4" />
+                <span>儲存驚喜</span>
               </button>
             </div>
           </div>

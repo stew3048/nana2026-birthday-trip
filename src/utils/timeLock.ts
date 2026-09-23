@@ -206,6 +206,12 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
     iso: '2026-10-16T18:00:00'
   },
   {
+    id: 'd1_spa_time',
+    label: '10/16 20:30 (Day 1 煙波三溫暖 🧖‍♀️ 水療舒壓通知)',
+    badge: '觸發 20:30 三溫暖通知',
+    iso: '2026-10-16T20:30:00'
+  },
+  {
     id: 'd1_clinic_night',
     label: '10/16 23:00 (Day 1 密醫看診 🩺 即時情境通知)',
     badge: '觸發 23:00 密醫特診',
@@ -213,8 +219,8 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
   },
   {
     id: 'd2_birthday_morning',
-    label: '10/17 00:00 (Day 2 晴寶生日整點 🎂 生日祝福通知)',
-    badge: '觸發 00:00 壽星通知',
+    label: '10/17 00:00 (Day 2 晴寶生日大日子到來 ✨)',
+    badge: '10/17 生日跨日',
     iso: '2026-10-17T00:00:00'
   },
   {
@@ -224,6 +230,12 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
     iso: '2026-10-17T07:30:00'
   },
   {
+    id: 'd2_leather_craft',
+    label: '10/17 13:00 (Day 2 質感手作皮革體驗 🔨 親手敲印紀念)',
+    badge: '13:00 皮革手作',
+    iso: '2026-10-17T13:00:00'
+  },
+  {
     id: 'd2_leather_escape',
     label: '10/17 15:00 (Day 2 密室逃脫特務 🗝️ 默契挑戰通知)',
     badge: '觸發 15:00 密室通知',
@@ -231,8 +243,8 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
   },
   {
     id: 'd2_french_dinner',
-    label: '10/17 18:00 (Day 2 法式慶生大餐 🕯️ 寫字盤即時通知)',
-    badge: '觸發 18:00 法式大餐通知',
+    label: '10/17 18:00 (Day 2 生日慶生晚餐 🎂 客製寫字盤即時通知)',
+    badge: '觸發 18:00 生日大餐通知',
     iso: '2026-10-17T18:00:00'
   },
   {
@@ -243,8 +255,8 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
   },
   {
     id: 'd3_bbq_finale',
-    label: '10/18 18:00 (Day 3 蔡寶私心頂級燒肉 🥩 即時通知)',
-    badge: '觸發 18:00 燒肉通知',
+    label: '10/18 18:00 (Day 3 蔡寶私心頂級燒肉 🥩 行程晚餐)',
+    badge: '18:00 燒肉晚餐',
     iso: '2026-10-18T18:00:00'
   },
   {
@@ -282,6 +294,25 @@ export function sortActivitiesChronologically(activities: ActivityItem[]): Activ
  */
 export function getSurpriseStartTime(item: SurpriseItem): number {
   if (!item) return 0;
+
+  // 0. If item has structured date (e.g. "2026-10-17"), calculate timestamp directly down to the minute
+  if (item.date) {
+    const timeStr = item.time || (item.timing ? item.timing.match(/(\d{1,2}:\d{2})/)?.[1] : null) || '12:00';
+    const [hStr, mStr] = timeStr.split(':');
+    const h = parseInt(hStr || '12', 10);
+    const m = parseInt(mStr || '0', 10);
+    const dateParts = item.date.split('-');
+    if (dateParts.length === 3) {
+      const y = parseInt(dateParts[0], 10);
+      const mon = parseInt(dateParts[1], 10) - 1;
+      const day = parseInt(dateParts[2], 10);
+      const dt = new Date(y, mon, day, isNaN(h) ? 12 : h, isNaN(m) ? 0 : m, 0, 0);
+      if (!isNaN(dt.getTime())) {
+        return dt.getTime();
+      }
+    }
+  }
+
   const timing = (item.timing || '').trim();
 
   // 1. Try full ISO date or YYYY-MM-DD HH:mm

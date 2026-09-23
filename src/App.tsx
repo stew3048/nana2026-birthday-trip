@@ -15,7 +15,7 @@ import { NetlifyGuideModal } from './components/NetlifyGuideModal';
 import { PrintGuideModal } from './components/PrintGuideModal';
 import { SurpriseRevealModal } from './components/SurpriseRevealModal';
 import { SnackWishlistView } from './components/SnackWishlistView';
-import { LiveAlertModal, ALERT_SCENARIOS, LiveAlertScenario } from './components/LiveAlertModal';
+import { LiveAlertModal, LiveAlertScenario } from './components/LiveAlertModal';
 import { RoleAndSimulatorBar } from './components/RoleAndSimulatorBar';
 import { FirebaseDataInspectorModal } from './components/FirebaseDataInspectorModal';
 import { GuestGatekeeper } from './components/GuestGatekeeper';
@@ -23,7 +23,9 @@ import { ThemeStudioView } from './components/ThemeStudioView';
 import { useAuth } from './context/AuthContext';
 import { BirthdayTripData, ActivityItem, SurpriseItem, DayHighlightCard } from './types';
 import { loadTripData, saveTripData, syncTripToCloud, subscribeToTripFromCloud, fetchTripFromCloud } from './utils/storage';
-import { TIME_SIMULATOR_PRESETS, sortSurprisesByStartTime, sortScenariosByStartTime } from './utils/timeLock';
+import { TIME_SIMULATOR_PRESETS, sortSurprisesByStartTime, sortScenariosByStartTime, extractScenarioDateTimeComponents, extractTimestampFromTiming } from './utils/timeLock';
+import { updateConsolidatedSurprises, getConsolidatedSurprises } from './utils/surpriseSync';
+import { getSynchronizedAlertScenarios } from './utils/alertScenariosSync';
 import confetti from 'canvas-confetti';
 import { Heart, Sparkles, Gift, Bell, UtensilsCrossed, Stethoscope, Cake, Flame, Play, Star, Lock, CheckCircle2, RotateCcw, Plus, Edit3, Trash2, Eye, Clock } from 'lucide-react';
 
@@ -88,19 +90,23 @@ export default function App() {
     });
   };
 
-  // Combine preset scenarios with user's custom scenarios (excluding deleted/hidden ones), strictly sorted by start time
-  const hiddenScenarioIds = new Set(tripData.settings.hiddenScenarioIds || []);
-  const allScenarios: LiveAlertScenario[] = sortScenariosByStartTime(
-    [
-      ...ALERT_SCENARIOS,
-      ...(tripData.customAlertScenarios || [])
-    ].filter(s => !hiddenScenarioIds.has(s.id))
-  );
+  // Dynamically synchronize all Live Alert Scenarios directly from the active consolidated surprises!
+  // Whenever an itinerary activity becomes/cancels as a secret surprise, or a surprise is added/edited/deleted,
+  // the alert scenarios adjust reactively without any hardcoded preset dependencies.
+  const allScenarios: LiveAlertScenario[] = useMemo(() => {
+    return getSynchronizedAlertScenarios(tripData);
+  }, [
+    tripData.surprises,
+    tripData.itinerary,
+    tripData.standaloneSurprises,
+    tripData.customAlertScenarios,
+    tripData.settings.hiddenScenarioIds
+  ]);
 
-  // Surprise items sorted by start time
+  // Surprise items sorted by start time (strictly consolidated from itinerary secrets + standalone surprises)
   const sortedSurprises = useMemo(() => {
-    return sortSurprisesByStartTime(tripData.surprises || []);
-  }, [tripData.surprises]);
+    return getConsolidatedSurprises(tripData);
+  }, [tripData.surprises, tripData.itinerary, tripData.standaloneSurprises]);
 
   // All scenarios currently due up to effectiveTime (for automatic background scheduling)
   const allDueScenarios = allScenarios.filter(s => 
@@ -115,45 +121,177 @@ export default function App() {
   const lastAutoPoppedScenarioIdRef = useRef<string | null>(null);
   const lastAutoPoppedAlertIdRef = useRef<string | null>(null);
 
-  // Reset confetti on mount in case of any lingering ribbon canvas & clear any stale active alerts
+  // Reset confetti on mount in case of any lingering ribbon canvas & clear any stale active alerts & sync surprises
   useEffect(() => {
     try {
       confetti.reset();
     } catch (e) {}
 
-    // Clean up any stale active alert from past tests so girlfriend view won't pop up old test alerts
-    if (tripData.activeLiveAlert) {
-      const sentTime = tripData.activeLiveAlert.sentAt ? new Date(tripData.activeLiveAlert.sentAt).getTime() : 0;
-      const isStale = !sentTime || (Date.now() - sentTime > 20 * 60 * 1000);
-      if (isStale) {
-        setTripData(prev => {
-          const cleaned = { ...prev, activeLiveAlert: undefined };
-          saveTripData(cleaned);
-          syncTripToCloud(cleaned);
-          return cleaned;
-        });
-      }
-    }
-
-    // Ensure surprise item surp-3 title matches the alert card title perfectly
+    // Comprehensive data sanitation to prevent stale/misaligned surprises
     setTripData(prev => {
       let changed = false;
-      const updatedSurprises = prev.surprises.map(s => {
-        if (s.id === 'surp-3' && (s.title.includes('晴寶生日跨日整點') || !s.title.includes('壽星跨日整點'))) {
+      let newActiveLiveAlert = prev.activeLiveAlert;
+
+      // 1. Clean up stale or unwanted active live alerts (e.g., '請半天假' or '燒肉' or 00:00 midnight alert)
+      if (newActiveLiveAlert) {
+        const title = newActiveLiveAlert.title || '';
+        const sentTime = newActiveLiveAlert.sentAt ? new Date(newActiveLiveAlert.sentAt).getTime() : 0;
+        const isStale = !sentTime || (Date.now() - sentTime > 20 * 60 * 1000);
+        const isUnwanted = title.includes('請半天假') || title.includes('私心燒肉') || title.includes('壽星跨日整點') || newActiveLiveAlert.id === 'alert-1017-birthday';
+        if (isStale || isUnwanted) {
+          newActiveLiveAlert = undefined;
           changed = true;
-          return {
-            ...s,
-            title: '10/17 壽星跨日整點 🎂 蔡寶親手寫的真情告白卡片 ＆ 秘密大禮盒',
-            hint: '10/17 00:00 壽星跨日整點真情告白信與禮物 🎁'
+        }
+      }
+
+      // 2. Filter out any '請半天假' or unwanted alerts from customAlertScenarios
+      let newCustomAlerts = prev.customAlertScenarios || [];
+      if (newCustomAlerts.some(s => s.title && (s.title.includes('請半天假') || s.title.includes('私心燒肉') || s.title.includes('壽星跨日整點')))) {
+        newCustomAlerts = newCustomAlerts.filter(s => !s.title.includes('請半天假') && !s.title.includes('私心燒肉') && !s.title.includes('壽星跨日整點'));
+        changed = true;
+      }
+
+      // 3. Ensure act-1-5 (三溫暖水療) is marked isSecretSurprise in itinerary
+      let newItinerary = prev.itinerary;
+      if (Array.isArray(newItinerary)) {
+        newItinerary = newItinerary.map(day => {
+          if (day.dayNumber === 1 && Array.isArray(day.activities)) {
+            const hasSpa = day.activities.some(a => a.id === 'act-1-5');
+            if (hasSpa) {
+              const updatedActivities = day.activities.map(a => {
+                if (a.id === 'act-1-5' && !a.isSecretSurprise) {
+                  changed = true;
+                  return { ...a, isSecretSurprise: true, surpriseHint: '晚上 20:30 煙波男女三溫暖水療放鬆泡湯 🧖‍♀️' };
+                }
+                return a;
+              });
+              return { ...day, activities: updatedActivities };
+            }
+          }
+          return day;
+        });
+      }
+
+      // 4. Sanitize surprises list (remove '請半天假', '燒肉', and midnight '跨日整點' surprise)
+      let updatedSurprises = [...(prev.surprises || [])];
+      
+      if (updatedSurprises.some(s => s.title.includes('請半天假') || s.title.includes('私心敲碗') || s.id === 'surp-6' || s.id === 'surp-3' || s.title.includes('壽星跨日整點'))) {
+        updatedSurprises = updatedSurprises.filter(s => !s.title.includes('請半天假') && !s.title.includes('私心敲碗') && s.id !== 'surp-6' && s.id !== 'surp-3' && !s.title.includes('壽星跨日整點'));
+        changed = true;
+      }
+
+      // Ensure surp-spa exists
+      if (!updatedSurprises.some(s => s.id === 'surp-spa' || s.activityId === 'act-1-5')) {
+        updatedSurprises.push({
+          id: 'surp-spa',
+          title: '🧖‍♀️ 煙波男女三溫暖水療放鬆 · 暖呼呼舒壓享受',
+          timing: 'Day 1 晚上 20:30',
+          location: '煙波大飯店 俱樂部設施',
+          description: '享受煙波著名的冷熱水療池、蒸氣室與烤箱，洗淨一週的工作疲倦，全身舒暢暖呼呼！',
+          isUnlocked: false,
+          unlockCode: '1017',
+          hint: '第一天晚上 20:30 煙波水療三溫暖放鬆 🧖‍♀️',
+          category: 'activity',
+          activityId: 'act-1-5',
+          dayNumber: 1,
+          sourceType: 'itinerary'
+        });
+        changed = true;
+      }
+
+      // Fix ID mapping mismatches and remove any forced 法式
+      updatedSurprises = updatedSurprises.map(s => {
+        let updated = s;
+        // Fix surp-2 (clinic) activityId to act-1-6
+        if (updated.id === 'surp-2' && updated.activityId !== 'act-1-6') {
+          changed = true;
+          updated = { ...updated, activityId: 'act-1-6', title: '🩺 深夜 23:00 密醫看診時間 · 蔡醫師專屬身心靈放鬆推拿' };
+        }
+        // Fix surp-4 (escape room) activityId to act-2-4
+        if (updated.id === 'surp-4' && updated.activityId !== 'act-2-4') {
+          changed = true;
+          updated = { ...updated, activityId: 'act-2-4', title: '🗝️ 密室逃脫通關特務挑戰 · 默契大考驗' };
+        }
+        // Fix surp-5 (dinner) activityId to act-2-5 and strip any lingering 法式
+        if (updated.id === 'surp-5' && (updated.activityId !== 'act-2-5' || updated.title.includes('法式'))) {
+          changed = true;
+          updated = {
+            ...updated,
+            activityId: 'act-2-5',
+            title: updated.title.replace(/法式浪漫奢華/g, '專屬浪漫').replace(/法式/g, '浪漫'),
+            location: updated.location.includes('法式') ? '台南精緻浪漫餐廳' : updated.location,
+            hint: updated.hint.includes('法式') ? '生日當晚的燭光浪漫慶生時刻 🕯️🎂' : updated.hint
           };
         }
-        return s;
-      });
-      if (changed) {
-        const updated = { ...prev, surprises: updatedSurprises };
-        saveTripData(updated);
-        syncTripToCloud(updated);
+        if (updated.title && updated.title.includes('法式')) {
+          changed = true;
+          updated = {
+            ...updated,
+            title: updated.title.replace(/法式浪漫奢華/g, '專屬浪漫').replace(/法式/g, '浪漫')
+          };
+        }
         return updated;
+      });
+
+      // Deduplicate surprises by ID and clean title to prevent duplicate entries
+      const uniqueSurprises: SurpriseItem[] = [];
+      const seenIds = new Set<string>();
+      const seenTitles = new Set<string>();
+      for (const s of updatedSurprises) {
+        if (!s || !s.title) continue;
+        const norm = s.title.replace(/^[\s\S]*?[🕯️🎂🍽️🧖‍♀️🩺🗝️✨💌🎁📸\s]+/u, '').trim().toLowerCase();
+        if (seenIds.has(s.id)) {
+          changed = true;
+          continue;
+        }
+        if (norm.length > 2 && seenTitles.has(norm)) {
+          changed = true;
+          continue;
+        }
+        seenIds.add(s.id);
+        if (norm.length > 2) seenTitles.add(norm);
+        uniqueSurprises.push(s);
+      }
+      updatedSurprises = uniqueSurprises;
+
+      // Also clean up any lingering 法式 or duplicates in standaloneSurprises
+      let updatedStandalone = prev.standaloneSurprises;
+      if (Array.isArray(updatedStandalone) && updatedStandalone.length > 0) {
+        const uniqueStandalone: SurpriseItem[] = [];
+        for (const s of updatedStandalone) {
+          if (!s || !s.title) continue;
+          const norm = s.title.replace(/^[\s\S]*?[🕯️🎂🍽️🧖‍♀️🩺🗝️✨💌🎁📸\s]+/u, '').trim().toLowerCase();
+          if (seenIds.has(s.id) || (norm.length > 2 && seenTitles.has(norm))) {
+            changed = true;
+            continue;
+          }
+          let cleanS = s;
+          if (cleanS.title.includes('法式')) {
+            changed = true;
+            cleanS = {
+              ...cleanS,
+              title: cleanS.title.replace(/法式浪漫奢華/g, '專屬浪漫').replace(/法式/g, '浪漫')
+            };
+          }
+          seenIds.add(cleanS.id);
+          if (norm.length > 2) seenTitles.add(norm);
+          uniqueStandalone.push(cleanS);
+        }
+        updatedStandalone = uniqueStandalone;
+      }
+
+      if (changed) {
+        const cleaned: BirthdayTripData = {
+          ...prev,
+          activeLiveAlert: newActiveLiveAlert,
+          customAlertScenarios: newCustomAlerts,
+          itinerary: newItinerary,
+          surprises: sortSurprisesByStartTime(updatedSurprises),
+          standaloneSurprises: updatedStandalone
+        };
+        saveTripData(cleaned);
+        syncTripToCloud(cleaned);
+        return cleaned;
       }
       return prev;
     });
@@ -412,26 +550,36 @@ export default function App() {
       return;
     }
 
-    const presetScenarioMap: Record<string, string> = {
-      'd1_dinner_time': 'alert-1800-dinner',
-      'd1_clinic_night': 'alert-2300-clinic',
-      'd2_birthday_morning': 'alert-1017-birthday',
-      'd2_leather_escape': 'alert-escape-room',
-      'd2_french_dinner': 'alert-french-dinner',
-      'd3_bbq_finale': 'alert-bbq-time'
-    };
+    let scenario: LiveAlertScenario | undefined;
 
-    const scenarioId = presetScenarioMap[preset.id];
-    if (scenarioId) {
-      const scenario = allScenarios.find(s => s.id === scenarioId);
-      if (scenario) {
-        handleTriggerScenario(scenario);
-        return;
-      }
+    // 1. Dynamic match by triggerTime (within 30 minutes)
+    if (preset.iso) {
+      const presetTs = new Date(preset.iso).getTime();
+      scenario = allScenarios.find(s => {
+        const sTs = extractTimestampFromTiming(s.triggerTime);
+        return Math.abs(sTs - presetTs) <= 30 * 60 * 1000;
+      });
     }
 
-    // If selecting a non-surprise moment (e.g. 10/16 16:30 hotel checkin),
-    // clear activeLiveAlert so previous alerts (like escape room) won't pop up!
+    // 2. Keyword fallback match if specific scenario preset
+    if (!scenario) {
+      const pLabel = preset.label;
+      scenario = allScenarios.find(s => {
+        if (pLabel.includes('三溫暖') && s.title.includes('三溫暖')) return true;
+        if (pLabel.includes('密醫') && s.title.includes('密醫')) return true;
+        if (pLabel.includes('密室') && s.title.includes('密室')) return true;
+        if (pLabel.includes('大餐') && (s.title.includes('晚餐') || s.title.includes('大餐'))) return true;
+        return false;
+      });
+    }
+
+    if (scenario) {
+      handleTriggerScenario(scenario);
+      return;
+    }
+
+    // If selecting a non-surprise moment (e.g. 10/16 16:30 hotel checkin or 00:00 midnight),
+    // clear activeLiveAlert so previous alerts won't pop up!
     if (tripData.activeLiveAlert) {
       const updated: BirthdayTripData = {
         ...tripData,
@@ -446,34 +594,49 @@ export default function App() {
     setTimeout(() => setSentToast(null), 3500);
   };
 
-  // Sync Secret Itinerary with Surprises List
+  // Sync Secret Itinerary with Surprises List & Alert Scenarios
   const handleSyncSecretSurprise = (activity: ActivityItem, dayNumber: number, isDeleted: boolean = false) => {
     setTripData(prev => {
       let updatedSurprises = [...prev.surprises];
-      const existingIndex = updatedSurprises.findIndex(s => s.activityId === activity.id);
+      let updatedStandalone = [...(prev.standaloneSurprises || [])];
+      let updatedCustom = [...(prev.customAlertScenarios || [])];
 
       if (isDeleted || !activity.isSecretSurprise) {
-        if (existingIndex !== -1) {
-          updatedSurprises = updatedSurprises.filter(s => s.activityId !== activity.id);
-        }
+        // Remove from surprises
+        updatedSurprises = updatedSurprises.filter(s => s.activityId !== activity.id && s.id !== `surp-act-${activity.id}`);
+        // Remove from standalone
+        updatedStandalone = updatedStandalone.filter(s => s.activityId !== activity.id && s.id !== `surp-act-${activity.id}`);
+        // Remove from custom alerts
+        updatedCustom = updatedCustom.filter(c => c.linkedSurpriseId !== activity.id && c.linkedSurpriseId !== `surp-act-${activity.id}` && c.id !== `alert-surp-act-${activity.id}`);
       } else if (activity.isSecretSurprise) {
-        let surpriseCat: 'gift' | 'cake' | 'activity' | 'memory' | 'letter' = 'activity';
+        const existingIndex = updatedSurprises.findIndex(s => s.activityId === activity.id || s.id === `surp-act-${activity.id}`);
+        const existing = existingIndex !== -1 ? updatedSurprises[existingIndex] : undefined;
+
+        const timeMatch = activity.time.match(/(\d{1,2}:\d{2})/);
+        const actTime = timeMatch ? timeMatch[1] : '18:00';
+        const actDate = dayNumber === 1 ? '2026-10-16' : dayNumber === 3 ? '2026-10-18' : '2026-10-17';
+
+        let surpriseCat: 'gift' | 'cake' | 'activity' | 'memory' | 'letter' = existing?.category || 'activity';
         if (activity.category === 'dining') surpriseCat = 'cake';
         else if (activity.category === 'sightseeing' || activity.category === 'photo_spot') surpriseCat = 'memory';
         else if (activity.category === 'birthday_surprise') surpriseCat = 'gift';
 
         const surpriseEntry: SurpriseItem = {
-          id: existingIndex !== -1 ? updatedSurprises[existingIndex].id : 'surp-act-' + activity.id,
+          id: existing?.id || 'surp-act-' + activity.id,
           title: activity.title,
           timing: `Day ${dayNumber} ${activity.time}`,
+          date: actDate,
+          time: actTime,
           location: activity.location || '台南神秘地點',
           description: activity.description || '由蔡寶為晴寶秘密安排的專屬浪漫行程！',
-          isUnlocked: false,
-          unlockCode: '0520',
-          hint: activity.surpriseHint || '秘密行程，等妳親自揭曉 💕',
+          isUnlocked: existing ? existing.isUnlocked : false,
+          unlockCode: activity.surpriseUnlockCode || existing?.unlockCode || '0520',
+          hint: activity.surpriseHint || existing?.hint || '秘密行程，等妳親自揭曉 💕',
           category: surpriseCat,
           activityId: activity.id,
-          dayNumber
+          dayNumber,
+          sourceType: 'itinerary',
+          isStandalone: false
         };
 
         if (existingIndex !== -1) {
@@ -483,7 +646,12 @@ export default function App() {
         }
       }
 
-      const updated = { ...prev, surprises: sortSurprisesByStartTime(updatedSurprises) };
+      const updated: BirthdayTripData = {
+        ...prev,
+        surprises: sortSurprisesByStartTime(updatedSurprises),
+        standaloneSurprises: updatedStandalone,
+        customAlertScenarios: updatedCustom
+      };
       saveTripData(updated);
       syncTripToCloud(updated);
       return updated;
@@ -496,86 +664,169 @@ export default function App() {
     syncTripToCloud(newData);
   };
 
-  // Save / Update a Custom Alert Scenario
-  const handleSaveCustomScenario = (scenario: LiveAlertScenario, syncToSurprises: boolean) => {
-    const existingCustom = tripData.customAlertScenarios || [];
-    const exists = existingCustom.some(s => s.id === scenario.id);
-    let updatedCustom: LiveAlertScenario[];
-    if (exists) {
-      updatedCustom = existingCustom.map(s => s.id === scenario.id ? scenario : s);
-    } else {
-      updatedCustom = [...existingCustom, scenario];
-    }
+  // Save / Update a Custom Alert Scenario (two-way synchronized with surprises & itinerary)
+  const handleSaveCustomScenario = (scenario: LiveAlertScenario, _syncToSurprises: boolean = true) => {
+    setTripData(prev => {
+      let updatedSurprises = [...prev.surprises];
+      let updatedStandalone = [...(prev.standaloneSurprises || [])];
+      let updatedItinerary = [...prev.itinerary];
 
-    let updatedSurprises = [...tripData.surprises];
-    if (syncToSurprises) {
-      const cleanTitle = scenario.title.replace(/^✨\s*/, '');
-      const surpriseExists = updatedSurprises.some(
-        s => (scenario.linkedSurpriseId && s.id === scenario.linkedSurpriseId) || s.title === cleanTitle
+      // Parse date & time
+      const dtParts = (scenario.triggerTime || '').split(' ');
+      const date = dtParts[0] || '2026-10-16';
+      const time = dtParts[1] || '18:00';
+      const dayNumber = date === '2026-10-16' ? 1 : date === '2026-10-18' ? 3 : 2;
+
+      // Find if this scenario matches an existing surprise
+      const targetSurpriseId = scenario.linkedSurpriseId || scenario.id.replace(/^alert-/, '');
+      const existingSurpriseIndex = updatedSurprises.findIndex(
+        s => s.id === targetSurpriseId || (s.activityId && s.activityId === targetSurpriseId)
       );
-      if (!surpriseExists) {
+
+      let surpriseId = targetSurpriseId;
+
+      if (existingSurpriseIndex !== -1) {
+        // Update existing surprise
+        const existing = updatedSurprises[existingSurpriseIndex];
+        const updatedItem: SurpriseItem = {
+          ...existing,
+          title: scenario.title,
+          description: scenario.message,
+          hint: scenario.secondaryHint,
+          date,
+          time,
+          timing: scenario.timeLabel || `Day ${dayNumber} ${time}`,
+          dayNumber
+        };
+        updatedSurprises[existingSurpriseIndex] = updatedItem;
+
+        const standaloneIdx = updatedStandalone.findIndex(s => s.id === existing.id);
+        if (standaloneIdx !== -1) {
+          updatedStandalone[standaloneIdx] = updatedItem;
+        }
+
+        if (existing.activityId) {
+          updatedItinerary = updatedItinerary.map(day => ({
+            ...day,
+            activities: (day.activities || []).map(act => {
+              if (act.id === existing.activityId) {
+                return {
+                  ...act,
+                  title: scenario.title,
+                  time,
+                  description: scenario.message,
+                  surpriseHint: scenario.secondaryHint,
+                  isSecretSurprise: true
+                };
+              }
+              return act;
+            })
+          }));
+        }
+      } else {
+        // Create new standalone surprise
+        surpriseId = scenario.linkedSurpriseId || `surp-${Date.now()}`;
         const newSurprise: SurpriseItem = {
-          id: scenario.linkedSurpriseId || `surp-custom-${Date.now()}`,
-          title: cleanTitle,
-          timing: scenario.timeLabel,
+          id: surpriseId,
+          title: scenario.title,
+          timing: scenario.timeLabel || `Day ${dayNumber} ${time}`,
+          date,
+          time,
+          dayNumber,
           location: '台南專屬浪漫站點',
           description: scenario.message,
-          hint: scenario.secondaryHint || '蔡寶精心準備的驚喜！',
+          hint: scenario.secondaryHint || '蔡寶精心準備的驚喜！💕',
           isUnlocked: false,
-          unlockCode: '1017',
-          category: scenario.category === 'birthday' ? 'cake' : scenario.category === 'escape' ? 'activity' : 'gift'
+          unlockCode: '0520',
+          category: scenario.category === 'birthday' ? 'cake' : scenario.category === 'escape' ? 'activity' : 'gift',
+          isStandalone: true,
+          sourceType: 'standalone'
         };
         updatedSurprises.push(newSurprise);
+        updatedStandalone.push(newSurprise);
       }
-    }
 
-    const updated: BirthdayTripData = {
-      ...tripData,
-      customAlertScenarios: sortScenariosByStartTime(updatedCustom),
-      surprises: sortSurprisesByStartTime(updatedSurprises)
-    };
+      const scenarioWithLink: LiveAlertScenario = {
+        ...scenario,
+        linkedSurpriseId: surpriseId
+      };
 
-    setTripData(updated);
-    saveTripData(updated);
-    syncTripToCloud(updated);
+      const existingCustom = prev.customAlertScenarios || [];
+      const customExists = existingCustom.some(s => s.id === scenario.id || (s.linkedSurpriseId && s.linkedSurpriseId === surpriseId));
+      let updatedCustom: LiveAlertScenario[];
+      if (customExists) {
+        updatedCustom = existingCustom.map(s => 
+          (s.id === scenario.id || (s.linkedSurpriseId && s.linkedSurpriseId === surpriseId)) ? scenarioWithLink : s
+        );
+      } else {
+        updatedCustom = [...existingCustom, scenarioWithLink];
+      }
 
-    setSentToast(`✨ 已成功儲存驚喜卡片「${scenario.title}」！`);
+      const updated: BirthdayTripData = {
+        ...prev,
+        itinerary: updatedItinerary,
+        surprises: sortSurprisesByStartTime(updatedSurprises),
+        standaloneSurprises: updatedStandalone,
+        customAlertScenarios: sortScenariosByStartTime(updatedCustom)
+      };
+
+      saveTripData(updated);
+      syncTripToCloud(updated);
+      return updated;
+    });
+
+    setSentToast(`✨ 已成功儲存情境通報卡「${scenario.title}」！`);
     setTimeout(() => setSentToast(null), 3500);
   };
 
-  // Delete or Hide an Alert Scenario (Works for custom & preset cards)
+  // Delete an Alert Scenario (two-way synchronized: removes surprise & un-toggles secret itinerary item)
   const executeDeleteScenario = (scenarioId: string) => {
     const target = allScenarios.find(s => s.id === scenarioId);
     const title = target?.title || '這張驚喜卡片';
+    const linkedSurpriseId = target?.linkedSurpriseId || scenarioId.replace(/^alert-/, '');
 
-    const existingCustom = tripData.customAlertScenarios || [];
-    const isCustom = existingCustom.some(s => s.id === scenarioId);
+    setTripData(prev => {
+      // 1. Remove from surprises
+      const updatedSurprises = (prev.surprises || []).filter(
+        s => s.id !== linkedSurpriseId && s.activityId !== linkedSurpriseId && s.id !== scenarioId
+      );
 
-    let updatedCustom = existingCustom;
-    let updatedHidden = [...(tripData.settings.hiddenScenarioIds || [])];
+      // 2. Remove from standaloneSurprises
+      const updatedStandalone = (prev.standaloneSurprises || []).filter(
+        s => s.id !== linkedSurpriseId && s.activityId !== linkedSurpriseId && s.id !== scenarioId
+      );
 
-    if (isCustom) {
-      updatedCustom = existingCustom.filter(s => s.id !== scenarioId);
-    } else {
-      if (!updatedHidden.includes(scenarioId)) {
-        updatedHidden.push(scenarioId);
-      }
-    }
+      // 3. If tied to an itinerary activity, set isSecretSurprise = false!
+      const updatedItinerary = (prev.itinerary || []).map(day => ({
+        ...day,
+        activities: (day.activities || []).map(act => {
+          if (act.id === linkedSurpriseId || `surp-act-${act.id}` === linkedSurpriseId) {
+            return { ...act, isSecretSurprise: false };
+          }
+          return act;
+        })
+      }));
 
-    const updated: BirthdayTripData = {
-      ...tripData,
-      customAlertScenarios: updatedCustom,
-      settings: {
-        ...tripData.settings,
-        hiddenScenarioIds: updatedHidden
-      }
-    };
-    setTripData(updated);
-    saveTripData(updated);
-    syncTripToCloud(updated);
+      // 4. Remove from customAlertScenarios
+      const updatedCustom = (prev.customAlertScenarios || []).filter(
+        s => s.id !== scenarioId && s.linkedSurpriseId !== linkedSurpriseId
+      );
+
+      const updated: BirthdayTripData = {
+        ...prev,
+        itinerary: updatedItinerary,
+        surprises: sortSurprisesByStartTime(updatedSurprises),
+        standaloneSurprises: updatedStandalone,
+        customAlertScenarios: updatedCustom
+      };
+
+      saveTripData(updated);
+      syncTripToCloud(updated);
+      return updated;
+    });
 
     setScenarioToDelete(null);
-    setSentToast(`🗑️ 已成功移除「${title}」卡片`);
+    setSentToast(`🗑️ 已成功移除「${title}」卡片與對應驚喜項目`);
     setTimeout(() => setSentToast(null), 3500);
   };
 
@@ -626,7 +877,12 @@ export default function App() {
 
   const handleUpdateItinerary = (newItinerary: BirthdayTripData['itinerary']) => {
     setTripData(prev => {
-      const updated = { ...prev, itinerary: newItinerary };
+      const intermediate = { ...prev, itinerary: newItinerary };
+      const consolidated = getConsolidatedSurprises(intermediate);
+      const updated = {
+        ...intermediate,
+        surprises: consolidated
+      };
       saveTripData(updated);
       syncTripToCloud(updated);
       return updated;
@@ -634,9 +890,8 @@ export default function App() {
   };
 
   const handleUpdateSurprises = (newSurprises: BirthdayTripData['surprises']) => {
-    const sorted = sortSurprisesByStartTime(newSurprises);
     setTripData(prev => {
-      const updated = { ...prev, surprises: sorted };
+      const updated = updateConsolidatedSurprises(prev, newSurprises);
       saveTripData(updated);
       syncTripToCloud(updated);
       return updated;

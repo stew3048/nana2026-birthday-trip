@@ -45,7 +45,7 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
   const [category, setCategory] = useState<LiveAlertScenario['category']>('sparkles');
   const [selectedSurpriseId, setSelectedSurpriseId] = useState<string>('');
   const [selectedActivityKey, setSelectedActivityKey] = useState<string>('');
-  const [syncToSurprises, setSyncToSurprises] = useState(false);
+  const [syncToSurprises, setSyncToSurprises] = useState(true);
 
   useEffect(() => {
     if (initialScenario) {
@@ -62,7 +62,7 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
       setCategory(initialScenario.category || 'sparkles');
       setSelectedSurpriseId(initialScenario.linkedSurpriseId || '');
       setSelectedActivityKey('');
-      setSyncToSurprises(false);
+      setSyncToSurprises(true);
     } else {
       setDate('2026-10-16');
       setTime('15:00');
@@ -73,7 +73,7 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
       setCategory('sparkles');
       setSelectedSurpriseId('');
       setSelectedActivityKey('');
-      setSyncToSurprises(false);
+      setSyncToSurprises(true);
     }
   }, [initialScenario, isOpen]);
 
@@ -189,19 +189,19 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-[var(--romantic-border,#BAE6FD)] max-h-[92vh] flex flex-col text-[var(--romantic-ink,#0F172A)]">
+      <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-[var(--romantic-border,#BAE6FD)] max-h-[92vh] sm:max-h-[88vh] flex flex-col my-auto text-[var(--romantic-ink,#0F172A)]">
         
         {/* Header */}
-        <div className="p-5 sm:p-6 btn-romantic-primary text-white flex items-center justify-between border-b border-white/20 shrink-0">
+        <div className="p-4 sm:p-5 btn-romantic-primary text-white flex items-center justify-between border-b border-white/20 shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
               <Bell className="w-5 h-5 text-white animate-pulse" />
             </div>
             <div>
-              <h3 className="font-serif font-bold text-lg text-white">
+              <h3 className="font-serif font-bold text-base sm:text-lg text-white">
                 {initialScenario ? '編輯專屬驚喜卡片' : '➕ 新增專屬即時驚喜卡片'}
               </h3>
-              <p className="text-white/80 text-xs mt-0.5">
+              <p className="text-white/80 text-[11px] mt-0.5">
                 時間到達時將主動全螢幕彈出給晴寶，播放音樂並發射彩色紙花 🎉
               </p>
             </div>
@@ -210,13 +210,14 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="關閉"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1 text-sm">
+        <form id="alert-card-form" onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1 text-sm">
           
           {/* Quick Import from Itinerary Activities (Recommended) */}
           {existingItinerary.length > 0 && !initialScenario && (
@@ -233,14 +234,16 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
                 onChange={(e) => handleSelectActivity(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-white border border-[var(--romantic-border,#BAE6FD)] text-xs text-[var(--romantic-ink,#0F172A)] focus:outline-none focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)] cursor-pointer"
               >
-                <option value="">-- 點此選擇行程（如 10/16 15:00 蔡寶請半天假直奔台南）--</option>
+                <option value="">-- 點此選擇行程（如 10/16 20:30 煙波三溫暖放鬆）--</option>
                 {existingItinerary.map((day, dayIdx) => (
                   <optgroup key={`day-${day.dayNumber}`} label={`Day ${day.dayNumber} (${day.date})`}>
-                    {day.activities.map((act, actIdx) => (
-                      <option key={`act-${dayIdx}-${actIdx}`} value={`${dayIdx}_${actIdx}`}>
-                        {act.time} · {act.title}
-                      </option>
-                    ))}
+                    {day.activities
+                      .filter(act => !act.title.includes('請半天假'))
+                      .map((act, actIdx) => (
+                        <option key={`act-${dayIdx}-${actIdx}`} value={`${dayIdx}_${actIdx}`}>
+                          {act.time} · {act.title}
+                        </option>
+                      ))}
                   </optgroup>
                 ))}
               </select>
@@ -260,14 +263,16 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
               <select
                 value={selectedSurpriseId}
                 onChange={(e) => handleSelectSurprise(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-white border border-amber-200 text-xs text-[var(--romantic-ink,#0F172A)] focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                className="w-full px-3 py-2 rounded-xl bg-white border border-amber-200 text-xs text-amber-950 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
               >
-                <option value="">-- 點此選擇要轉化為推播卡片的驚喜任務 --</option>
-                {existingSurprises.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.timing} · {s.title}
-                  </option>
-                ))}
+                <option value="">-- 點此選擇驚喜任務帶入 --</option>
+                {existingSurprises
+                  .filter(s => !s.title.includes('請半天假'))
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.timing} · {s.title}
+                    </option>
+                  ))}
               </select>
             </div>
           )}
@@ -308,17 +313,17 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
             <span className="text-[10px] text-[var(--romantic-muted,#64748B)] shrink-0">推薦關鍵時刻：</span>
             <button
               type="button"
-              onClick={() => { setDate('2026-10-16'); setTime('15:00'); }}
+              onClick={() => { setDate('2026-10-16'); setTime('18:00'); }}
               className="text-[10px] px-2.5 py-1 rounded-full bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold whitespace-nowrap cursor-pointer border border-sky-300 transition-colors"
             >
-              🚗 10/16 15:00 請半天假出發
+              🍽️ 10/16 18:00 晚餐
             </button>
             <button
               type="button"
-              onClick={() => { setDate('2026-10-16'); setTime('18:00'); }}
+              onClick={() => { setDate('2026-10-16'); setTime('20:30'); }}
               className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 whitespace-nowrap cursor-pointer"
             >
-              🍽️ 10/16 18:00 晚餐
+              🧖‍♀️ 10/16 20:30 三溫暖
             </button>
             <button
               type="button"
@@ -346,7 +351,7 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
               onClick={() => { setDate('2026-10-17'); setTime('18:00'); }}
               className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-700 whitespace-nowrap cursor-pointer"
             >
-              ✨ 10/17 18:00 法式大餐
+              🎂 10/17 18:00 生日大餐
             </button>
             <button
               type="button"
@@ -459,24 +464,26 @@ export const AddEditAlertCardModal: React.FC<AddEditAlertCardModalProps> = ({
             </label>
           )}
 
-          {/* Action Buttons */}
-          <div className="pt-4 border-t border-[var(--romantic-border,#BAE6FD)] flex items-center justify-end space-x-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-700 cursor-pointer"
-            >
-              取消
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-xl btn-romantic-primary text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center space-x-1.5 cursor-pointer"
-            >
-              <Check className="w-4 h-4" />
-              <span>{initialScenario ? '儲存修改' : '立即新增驚喜卡片'}</span>
-            </button>
-          </div>
         </form>
+
+        {/* Action Buttons Sticky Footer */}
+        <div className="p-4 sm:p-5 bg-slate-50 border-t border-[var(--romantic-border,#BAE6FD)] flex items-center justify-end space-x-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 cursor-pointer"
+          >
+            取消
+          </button>
+          <button
+            type="submit"
+            form="alert-card-form"
+            className="px-5 py-2 rounded-xl btn-romantic-primary text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center space-x-1.5 cursor-pointer"
+          >
+            <Check className="w-4 h-4" />
+            <span>{initialScenario ? '儲存修改' : '立即新增驚喜卡片'}</span>
+          </button>
+        </div>
 
       </div>
     </div>

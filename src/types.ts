@@ -21,6 +21,7 @@ export interface ActivityItem {
   notes?: string; // e.g. "已電話預約 訂位代號 #7829"
   isSecretSurprise?: boolean; // If true, boyfriend can hide this in presentation mode
   surpriseHint?: string; // e.g. "神秘行程，等妳親自揭曉 💕"
+  surpriseUnlockCode?: string; // e.g. "0520" or "love"
   cost?: number;
   photoUrl?: string;
 }
@@ -39,7 +40,9 @@ export interface DayItinerary {
 export interface SurpriseItem {
   id: string;
   title: string;
-  timing: string; // e.g. "Day 2 晚餐後回到飯店時"
+  timing: string; // Display string, e.g. "Day 2 20:00" or "10/17 (六) 20:00"
+  date?: string; // Standardized ISO date: "2026-10-16", "2026-10-17", "2026-10-18"
+  time?: string; // Standardized 24h time: "20:00", "15:00", "23:00"
   location: string;
   description: string;
   isUnlocked: boolean;
@@ -106,6 +109,7 @@ export interface LoveLetter {
   openingText: string;
   bodyParagraphs: string[];
   closingText: string;
+  signature?: string;
   musicAutoPlay?: boolean;
 }
 

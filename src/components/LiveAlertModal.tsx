@@ -23,62 +23,56 @@ export const ALERT_SCENARIOS: LiveAlertScenario[] = [
     id: 'alert-1800-dinner',
     triggerTime: '2026-10-16 18:00',
     timeLabel: '10/16 (五) 18:00',
-    title: '🍽️ 晚餐時間到囉！浪漫約會即刻啟動',
+    title: '🍽️ 煙波大飯店 18:00 浪漫晚餐即時提醒 ＆ 隱糧浪漫晚餐',
     message: '請晴寶準備好最棒的心情，換上自在輕便的美麗裝扮，與蔡寶一起享用煙波大飯店 1F 隱糧義式餐酒館的浪漫精緻晚餐！',
-    secondaryHint: '主廚特製窯烤披薩 ＆ 爐烤牛排已備妥，請帶著最甜的笑容準時就座 🍝✨',
+    secondaryHint: '主廚特製窯烤披薩 ＆ 熟成牛排已備妥，請帶著最甜的笑容準時就座 🍝✨',
     category: 'dinner',
-    badge: '18:00 專屬晚餐提醒'
+    badge: '18:00 專屬晚餐提醒',
+    linkedSurpriseId: 'surp-1'
+  },
+  {
+    id: 'alert-2030-spa',
+    triggerTime: '2026-10-16 20:30',
+    timeLabel: '10/16 (五) 20:30',
+    title: '🧖‍♀️ 煙波男女三溫暖水療放鬆 · 暖呼呼舒壓享受',
+    message: '享受煙波著名的冷熱水療池、蒸氣室與烤箱，洗淨一週的工作疲倦，全身舒暢暖呼呼！',
+    secondaryHint: '飯店設施開放至 22:30，三溫暖設施男女分開，純放鬆享受 💖',
+    category: 'sparkles',
+    badge: '20:30 三溫暖水療',
+    linkedSurpriseId: 'surp-spa'
   },
   {
     id: 'alert-2300-clinic',
     triggerTime: '2026-10-16 23:00',
     timeLabel: '10/16 (五) 23:00',
-    title: '🩺💊 洗完澡了～進入「密醫看診時間」！',
+    title: '🩺 深夜 23:00 密醫看診時間 · 蔡醫師專屬身心靈放鬆推拿',
     message: '呼叫晴寶病患！蔡醫師已準備好專屬放鬆推拿精油與特等身心靈舒壓療程。今晚蔡醫師為您提供一對一 VIP 溫柔看診服務～',
     secondaryHint: '診斷結果：晴寶今日過度可愛，需蔡寶整晚深情陪伴與肩頸推拿 💖',
     category: 'clinic',
-    badge: '23:00 深夜情趣甜蜜特診'
-  },
-  {
-    id: 'alert-1017-birthday',
-    triggerTime: '2026-10-17 00:00',
-    timeLabel: '10/17 (六) 00:00',
-    title: '🎂 10/17 壽星跨日整點！真情告白卡片 ＆ 秘密大禮盒',
-    message: '全宇宙最可愛的小仙女晴寶，祝妳生日快樂！願妳新的一歲健康平安、所有願望都在蔡寶的守護下燦爛實現！',
-    secondaryHint: '對應神秘驚喜任務：Day 2 00:00 蔡寶親手寫的真情告白卡片 ＆ 秘密大禮盒 🎁💖',
-    category: 'birthday',
-    badge: '10/17 壽星跨日整點',
-    linkedSurpriseId: 'surp-3'
+    badge: '23:00 深夜情趣甜蜜特診',
+    linkedSurpriseId: 'surp-2'
   },
   {
     id: 'alert-escape-room',
     triggerTime: '2026-10-17 15:00',
     timeLabel: '10/17 (六) 15:00',
-    title: '🗝️ 密室逃脫特務出動！考驗兩人默契的時刻',
+    title: '🗝️ 密室逃脫通關特務挑戰 · 默契大考驗',
     message: '請特務晴寶與蔡寶就位！腦力激盪與尋找隱藏線索，蔡寶已充當專屬護花使者與智囊團，一起漂亮通關！',
     secondaryHint: '通關密碼提示：蔡寶最愛晴寶 💕',
     category: 'escape',
-    badge: '15:00 默契挑戰'
+    badge: '15:00 默契挑戰',
+    linkedSurpriseId: 'surp-4'
   },
   {
     id: 'alert-french-dinner',
     triggerTime: '2026-10-17 18:00',
     timeLabel: '10/17 (六) 18:00',
-    title: '🕯️🎂 晴寶專屬法式慶生盛宴 · 客製手繪寫字盤驚喜',
-    message: '全場燭光灑落，主廚為壽星晴寶精心料理頂級無菜單法式饗宴！壓軸將端上寫著「Happy Birthday 晴寶 💕」的手繪慶生甜點盤與蠟燭～',
+    title: '🕯️🎂 晴寶生日專屬浪漫晚餐 · 主廚客製手繪寫字盤驚喜',
+    message: '全場燭光灑落，主廚為壽星晴寶精心料理浪漫慶生饗宴！壓軸將端上寫著「Happy Birthday 晴寶 💕」的手繪慶生甜點盤與蠟燭～',
     secondaryHint: '蔡寶為晴寶點亮生日燭光，許下三個最美好的願望 🥂🎂✨',
-    category: 'french',
-    badge: '18:00 法式慶生大餐'
-  },
-  {
-    id: 'alert-bbq-time',
-    triggerTime: '2026-10-18 18:00',
-    timeLabel: '10/18 (日) 18:00',
-    title: '🥩🔥 蔡寶私心敲碗已久的頂級燒肉盛宴！',
-    message: '慶祝晴寶生日假期大成功！今晚大口吃極上 A5 和牛與厚切牛舌，滋滋作響的炭火香氣，為台南之旅畫下最美味的驚嘆號！',
-    secondaryHint: '肉汁爆漿預警！蔡寶專屬桌邊烤肉師上線 🥩✨',
-    category: 'bbq',
-    badge: '18:00 蔡寶私心燒肉'
+    category: 'dinner',
+    badge: '18:00 生日慶生大餐',
+    linkedSurpriseId: 'surp-5'
   }
 ];
 

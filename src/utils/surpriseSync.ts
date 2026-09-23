@@ -35,13 +35,19 @@ export function getConsolidatedSurprises(tripData: BirthdayTripData): SurpriseIt
         if (act.isSecretSurprise === true) {
           // Look up if an existing surprise record holds unlock state or custom codes
           const existing = existingSurprises.find(
-            s => s.activityId === act.id || s.id === `surp-act-${act.id}` || (s.title && s.title.includes(act.title))
+            s => s.activityId === act.id || s.id === `surp-act-${act.id}` || s.id === act.id
           );
+
+          const timeMatch = act.time.match(/(\d{1,2}:\d{2})/);
+          const actTime = existing?.time || (timeMatch ? timeMatch[1] : '18:00');
+          const actDate = existing?.date || day.date || (day.dayNumber === 2 ? '2026-10-17' : day.dayNumber === 3 ? '2026-10-18' : '2026-10-16');
 
           secretItineraryItems.push({
             id: existing?.id || `surp-act-${act.id}`,
             title: act.title,
-            timing: `Day ${day.dayNumber} ${act.time}`,
+            timing: existing?.timing || `Day ${day.dayNumber} ${act.time}`,
+            date: actDate,
+            time: actTime,
             location: act.location || '台南神秘地點',
             description: act.description || '由蔡寶為晴寶秘密安排的專屬浪漫行程！',
             isUnlocked: existing ? existing.isUnlocked : false,
@@ -59,49 +65,63 @@ export function getConsolidatedSurprises(tripData: BirthdayTripData): SurpriseIt
   }
 
   // 2. Gather independent surprises
-  // An independent surprise is one that has no activityId OR whose activityId does not exist in the itinerary
-  const allItineraryActivityIds = new Set(
-    (tripData.itinerary || []).flatMap(d => (d.activities || []).map(a => a.id))
-  );
+  const secretActivityIds = new Set(secretItineraryItems.map(s => s.activityId).filter(Boolean));
+  const secretIds = new Set(secretItineraryItems.map(s => s.id));
+  const secretTitles = new Set(secretItineraryItems.map(s => s.title.replace(/^[\s\S]*?[🕯️🎂🍽️🧖‍♀️🩺🗝️✨💌🎁📸\s]+/u, '').trim().toLowerCase()));
 
   const standaloneItems: SurpriseItem[] = [];
 
-  // From tripData.standaloneSurprises (if present)
-  if (Array.isArray(tripData.standaloneSurprises)) {
-    tripData.standaloneSurprises.forEach((s) => {
-      // Exclude if title mentions '請半天假'
-      if (s.title && s.title.includes('請半天假')) return;
-      standaloneItems.push({
-        ...s,
-        isStandalone: true,
-        sourceType: 'standalone'
-      });
+  const addStandaloneIfValid = (s: SurpriseItem) => {
+    if (!s || !s.title) return;
+    const cleanTitle = s.title.trim();
+    if (cleanTitle.includes('請半天假') || cleanTitle.includes('私心燒肉') || cleanTitle.includes('壽星跨日整點')) return;
+
+    // Skip if already in secretItineraryItems by activityId or ID
+    if (s.activityId && secretActivityIds.has(s.activityId)) return;
+    if (secretIds.has(s.id)) return;
+
+    // Prevent duplicate appearance if exact title matches secret item
+    const normalizedTitle = cleanTitle.replace(/^[\s\S]*?[🕯️🎂🍽️🧖‍♀️🩺🗝️✨💌🎁📸\s]+/u, '').trim().toLowerCase();
+    if (normalizedTitle.length > 2 && secretTitles.has(normalizedTitle)) return;
+
+    // Deduplicate within standaloneItems
+    if (standaloneItems.some(item => item.id === s.id || item.title.trim() === cleanTitle)) return;
+
+    // Deduce date and time if missing to ensure proper sorting
+    let date = s.date;
+    let time = s.time;
+    if (!date) {
+      if (s.dayNumber === 1 || (s.timing && (s.timing.includes('Day 1') || s.timing.includes('10/16')))) {
+        date = '2026-10-16';
+      } else if (s.dayNumber === 3 || (s.timing && (s.timing.includes('Day 3') || s.timing.includes('10/18')))) {
+        date = '2026-10-18';
+      } else {
+        date = '2026-10-17';
+      }
+    }
+    if (!time) {
+      const match = (s.timing || '').match(/(\d{1,2}:\d{2})/);
+      time = match ? match[1] : '18:00';
+    }
+
+    standaloneItems.push({
+      ...s,
+      date,
+      time,
+      isStandalone: true,
+      sourceType: 'standalone'
     });
+  };
+
+  // From tripData.standaloneSurprises
+  if (Array.isArray(tripData.standaloneSurprises)) {
+    tripData.standaloneSurprises.forEach(addStandaloneIfValid);
   }
 
-  // Also check tripData.surprises for existing standalone items that haven't been migrated yet
-  existingSurprises.forEach((s) => {
-    // If it's already an itinerary secret, skip (handled above)
-    if (s.activityId && allItineraryActivityIds.has(s.activityId)) {
-      return;
-    }
-    // If id starts with surp-act- but not in itinerary secrets, skip
-    if (s.id.startsWith('surp-act-')) {
-      return;
-    }
-    // Never include '請半天假' as surprise
-    if (s.title && s.title.includes('請半天假')) {
-      return;
-    }
-    // Check if already in standaloneItems
-    if (!standaloneItems.some(item => item.id === s.id)) {
-      standaloneItems.push({
-        ...s,
-        isStandalone: true,
-        sourceType: 'standalone'
-      });
-    }
-  });
+  // From tripData.surprises
+  if (Array.isArray(existingSurprises)) {
+    existingSurprises.forEach(addStandaloneIfValid);
+  }
 
   // 3. Combine and sort strictly by start time
   const consolidated = [...standaloneItems, ...secretItineraryItems];

@@ -108,7 +108,7 @@ export const ThemeStudioView: React.FC = () => {
                 style={{
                   backgroundColor: isSelected ? 'var(--romantic-card)' : item.colors.cardBg,
                   borderColor: isSelected ? 'var(--romantic-rose)' : item.colors.cardBorder,
-                  ringColor: item.colors.primary
+                  boxShadow: isSelected ? `0 0 0 2px ${item.colors.primary}` : undefined
                 }}
               >
                 {/* Active Indicator Top Right */}

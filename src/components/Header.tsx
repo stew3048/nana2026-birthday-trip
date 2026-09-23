@@ -287,6 +287,38 @@ export const Header: React.FC<HeaderProps> = ({
 
                       <div className="border-t border-slate-100 my-1"></div>
 
+                      {onOpenSettings && (
+                        <button
+                          onClick={() => { onOpenSettings(); setShowPresetMenu(false); }}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] flex items-center space-x-2 transition-colors cursor-pointer"
+                        >
+                          <Settings className="w-4 h-4 text-slate-400" />
+                          <span>基本資料與權限設定</span>
+                        </button>
+                      )}
+
+                      {onOpenPrintGuide && (
+                        <button
+                          onClick={() => { onOpenPrintGuide(); setShowPresetMenu(false); }}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-[var(--romantic-rose-light,#F0F9FF)] hover:text-[var(--romantic-rose,#0284C7)] flex items-center space-x-2 transition-colors cursor-pointer"
+                        >
+                          <Printer className="w-4 h-4 text-slate-400" />
+                          <span>列印手冊 / 另存 PDF</span>
+                        </button>
+                      )}
+
+                      {onOpenNetlifyGuide && (
+                        <button
+                          onClick={() => { onOpenNetlifyGuide(); setShowPresetMenu(false); }}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-amber-50 hover:text-amber-700 flex items-center space-x-2 transition-colors cursor-pointer"
+                        >
+                          <Globe className="w-4 h-4 text-amber-500" />
+                          <span>Netlify 免費上架教學</span>
+                        </button>
+                      )}
+
+                      <div className="border-t border-slate-100 my-1"></div>
+
                       <div className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                         行程範本切換
                       </div>
