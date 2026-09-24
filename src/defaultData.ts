@@ -25,14 +25,14 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       dayNumber: 1,
       date: '2026-10-16',
       themeTitle: 'Day 1 (五): 奔向府城的浪漫序曲 · 煙波入住與極致三溫暖放鬆夜',
-      dayDescription: '蔡寶週五請半天假，開車載著晴寶從台中出發！入住台南煙波大飯店，享用精緻晚餐，晚上運動泡三溫暖，還有深夜的甜蜜專屬互動～',
+      dayDescription: '蔡寶週五請半天假，開車載著晴寶從台中出發！入住台南煙波大飯店，享用精緻晚餐，晚上享受水療三溫暖，還有深夜的甜蜜專屬互動～',
       weatherForecast: '晴朗微風 26°C / 舒適宜人',
       todayOutfitTip: '休閒舒適車程穿搭，晚上可換上自在輕便服裝享受飯店三溫暖與健身房。',
       activities: [
         {
           id: 'act-1-1',
           time: '15:00 - 17:00',
-          title: '🚗 蔡寶請半天假！台中公司甜蜜出發直奔台南',
+          title: '🚗 請半天假！台中公司甜蜜出發直奔台南',
           category: 'transit',
           location: '台中出發 ➡️ 國道一號南下 ➡️ 台南',
           locationUrl: 'https://www.google.com/maps/search/?api=1&query=Lakeshore+Hotel+Tainan',
@@ -51,16 +51,6 @@ export const tainanBirthdayPreset: BirthdayTripData = {
         },
         {
           id: 'act-1-3',
-          time: '18:00 - 18:30',
-          title: '🔔 [即時通知] 晚餐時間到囉！請準備好最棒的心情享用浪漫晚餐 🍽️💖',
-          category: 'birthday_surprise',
-          location: '煙波大飯店 房內準備',
-          description: '手機彈出專屬通知提示！晴寶稍微補妝整理，與蔡寶牽手前往餐廳。',
-          isSecretSurprise: true,
-          surpriseHint: '晚上 18:00 專屬系統彈跳浪漫提醒通知 📱'
-        },
-        {
-          id: 'act-1-4',
           time: '18:30 - 20:15',
           title: '🍽️ 煙波大飯店「隱糧義式餐酒館」浪漫精緻晚餐',
           category: 'dining',
@@ -70,18 +60,18 @@ export const tainanBirthdayPreset: BirthdayTripData = {
           notes: '已訂位 18:30 雙人用餐，悠閒享用美食'
         },
         {
-          id: 'act-1-5',
+          id: 'act-1-4',
           time: '20:30 - 22:30',
-          title: '🧖‍♀️ 煙波男女三溫暖水療放鬆 (可先至健身房運動動一動)',
+          title: '🧖‍♀️ 煙波三溫暖水療放鬆',
           category: 'relax',
           location: '煙波大飯店 俱樂部設施',
           description: '享受煙波著名的冷熱水療池、蒸氣室與烤箱，洗淨一週的工作疲倦，全身舒暢暖呼呼。',
           notes: '飯店設施開放至 22:30，三溫暖設施男女分開，純放鬆享受',
           isSecretSurprise: true,
-          surpriseHint: '晚上 20:30 煙波男女三溫暖水療放鬆泡湯 🧖‍♀️'
+          surpriseHint: '晚上 20:30 煙波三溫暖水療放鬆泡湯 🧖‍♀️'
         },
         {
-          id: 'act-1-6',
+          id: 'act-1-5',
           time: '23:00 - 24:00',
           title: '🩺💖 [專屬深夜情趣提醒] 洗完澡了～進入「密醫看診時間」！',
           category: 'birthday_surprise',
@@ -97,9 +87,9 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       dayNumber: 2,
       date: '2026-10-17',
       themeTitle: 'Day 2 (六): 🎂 晴寶專屬生日大日子！水療手作、密室逃脫與專屬慶生盛宴',
-      dayDescription: '晴寶生日當天！享用煙波豐盛早餐、水療泳池玩水放鬆、手作皮革敲下專屬姓名紀念、密室逃脫默契挑戰，晚上享用專屬浪漫慶生大餐！',
+      dayDescription: '晴寶生日當天！享用煙波豐盛早餐、飯店健身房運動、密室逃脫默契挑戰、泳池放鬆，晚上享用走心慶生晚餐，床頭送上驚喜大禮！',
       weatherForecast: '陽光明媚 27°C / 最適合慶生拍照',
-      todayOutfitTip: '早上泳裝玩水，午後換上晴寶最仙氣的生日小禮服/氣質洋裝，今晚是妳最美的主場！',
+      todayOutfitTip: '早上運動與泳裝玩水，午後換上晴寶最仙氣的生日小禮服/漂亮洋裝，今晚是妳最美的主場！',
       activities: [
         {
           id: 'act-2-1',
@@ -112,54 +102,56 @@ export const tainanBirthdayPreset: BirthdayTripData = {
         },
         {
           id: 'act-2-2',
-          time: '10:00 - 12:00',
-          title: '🏊‍♀️ 煙波戶外水療露天泳池 玩水放鬆 & 拍美照',
+          time: '10:30 - 11:30',
+          title: '🔨 飯店健身房運動',
           category: 'relax',
-          location: '煙波大飯店 露天泳池水療區',
-          description: '在台南暖陽下游泳戲水、躺在躺椅上吹微風放空，蔡寶負責幫晴寶拍仙氣美照～',
-          notes: '12:00 回房梳洗吹整，換上美美的生日慶生穿搭 ✨'
+          location: '煙波大飯店 健身俱樂部',
+          description: '在煙波健身房活動筋骨、活力流汗，保持好心情與體態～',
+          notes: ''
         },
         {
           id: 'act-2-3',
-          time: '13:00 - 14:30',
-          title: '🔨 台南質感手作皮革體驗 · 親手敲印專屬紀念',
+          time: '13:15 - 14:30',
+          title: '🗝️ 台南密室逃脫挑戰 · 腦力激盪與默契大考驗',
           category: 'sightseeing',
-          location: '台南文創手作工坊 / 藍晒圖文創園區',
-          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Tainan+Leather+Craft+Studio',
-          description: '蔡寶與晴寶一起親手裁切、打孔、縫線，並敲印下兩人的專屬姓名縮寫與「2026.10.17」紀念皮革鑰匙圈/證件套。',
-          notes: '已預約 13:00 雙人手作體驗課程 🎁'
+          location: '台南熱門密室逃脫館 (神不在場)',
+          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Tainan+Escape+Room',
+          description: '"生活裡沒有書籍，就好像沒有陽光" – 莎士比亞。你願意冒險進到魔書裡，接受它的邀請嗎？蔡寶全程當晴寶的智囊團與護花使者，一起成功逃脫！',
+          notes: '已預約 13:15 主題密室 🕵️‍♂️🕵️‍♀️',
+          isSecretSurprise: true,
+          surpriseHint: '下午 13:15 兩人默契大考驗特務密室逃脫 🗝️'
         },
         {
           id: 'act-2-4',
-          time: '15:00 - 16:30',
-          title: '🗝️ 台南密室逃脫挑戰 · 腦力激盪與默契大考驗',
-          category: 'sightseeing',
-          location: '台南熱門密室逃脫館 (神不在場 / 笨蛋工作室)',
-          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Tainan+Escape+Room',
-          description: '兩人攜手破解謎題、尋找隱藏線索！蔡寶全程當晴寶的智囊團與護花使者，一起成功逃脫！',
-          notes: '已預約 15:00 場次主題密室 🕵️‍♂️🕵️‍♀️',
-          isSecretSurprise: true,
-          surpriseHint: '下午 15:00 兩人默契大考驗特務密室逃脫 🗝️'
+          time: '15:00 - 16:00',
+          title: '🏊‍♀️ 煙波戶外水療露天泳池 玩水放鬆 & 拍美照',
+          category: 'relax',
+          location: '煙波大飯店 露天泳池水療區',
+          description: '泳池位於館內二樓戶外的常溫泳池，空間寬敞開闊，四周綠意盎然，還可以看到司法博物館、美術館等無敵景觀。一起享受悠閒氛圍吧~',
+          notes: '最後進場 21:30，在台南暖陽下游泳戲水、躺在躺椅上吹微風放空，蔡寶負責幫晴寶拍仙氣美照～'
         },
         {
           id: 'act-2-5',
-          time: '18:00 - 20:15',
-          title: '🎂 晴寶生日專屬浪漫晚餐 · 主廚客製寫字盤驚喜',
+          time: '18:00 - 20:00',
+          title: '🎂 晴寶生日慶生晚餐 - 走心Zonuxin Bistro & Wine',
           category: 'dining',
-          location: '台南精緻浪漫餐廳',
-          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Tainan+Fine+Dining',
-          description: '在極致優雅的氛圍中享用主廚精選料理，壓軸送上寫著「Happy Birthday 晴寶 💕」的手繪慶生甜點盤與點燃蠟燭許願！',
+          location: 'Zouxin Bistro & Wine',
+          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Zouxin+Bistro+Wine+Tainan',
+          description: '精緻、親切服務深植人心的餐廳，提供精緻美食和葡萄酒，在這裡會感受到全程消費體驗都物超所值。',
+          notes: '已訂位 18:00，備註壽星生日慶祝 🍓🥂',
           isSecretSurprise: true,
-          surpriseHint: '預約已備註女友生日、香檳開瓶慶祝、主廚客製生日祝福盤 🍓🥂'
+          surpriseHint: '今天要吃甚麼呢~~~ 🍓🥂'
         },
         {
           id: 'act-2-6',
-          time: '20:30 - 22:30',
-          title: '✨ 飯後回到煙波飯店享受三溫暖 / 房內香檳微醺慶生夜',
-          category: 'relax',
-          location: '煙波大飯店 房內 & 三溫暖',
-          description: '回到飯店再去泡一次暖呼呼的三溫暖，回到房間開香檳小酌，送上蔡寶準備的生日秘密卡片與禮物。',
-          notes: '晴寶生日快樂！今晚妳是全宇宙最幸福的小仙女 💖'
+          time: '20:30 - 21:00',
+          title: '✨ 床頭驚喜 - 真情告白卡片 & 秘密生日大禮',
+          category: 'birthday_surprise',
+          location: '煙波大飯店 房內',
+          description: '回到房間，送上蔡寶精心準備的生日秘密告白卡片與禮物。',
+          notes: '晴寶生日快樂！今晚妳是全宇宙最幸福的小仙女 💖',
+          isSecretSurprise: true,
+          surpriseHint: '秘密行程，等妳親自揭曉 💕'
         }
       ]
     },
@@ -167,44 +159,54 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       id: 'day-3',
       dayNumber: 3,
       date: '2026-10-18',
-      themeTitle: 'Day 3 (日): 🍜 晴寶小吃票選巡禮 · 奇美木乃伊VR科技展 · 蔡寶私心燒肉大餐',
-      dayDescription: '早上由晴寶在 Web 上即時票選的小吃清單開吃！下午參觀奇美博物館埃及木乃伊展與沉浸式 VR，晚上由蔡寶敲碗已久的頂級燒肉盛宴壓軸，心滿意足回台中！',
+      themeTitle: 'Day 3 (日): 🍜 晴寶小吃票選巡禮 · 奇美木乃伊VR科技展 ·',
+      dayDescription: '要睡飽還是台南美食巡禮都可以！下午奇美博物館埃及木乃伊展與沉浸式 VR，心滿意足回台中！',
       weatherForecast: '秋高氣爽 26°C / 完美出遊日',
       todayOutfitTip: '知性休閒氣質風，適合在奇美博物館戶外阿波羅噴泉與館內拍美照。',
       activities: [
         {
           id: 'act-3-1',
-          time: '09:30 - 12:30',
-          title: '🍜 晴寶特選：台南在地小吃美食巡禮 (依即時投票清單！)',
-          category: 'dining',
-          location: '台南國華街 / 正興街 / 保安路商圈',
-          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Guohua+Street+Tainan',
-          description: '跟著晴寶在網頁上打勾票選的小吃清單出發！溫體牛肉湯、邱家小卷米粉、矮仔成蝦仁飯、鱔魚意麵、白糖粿、義豐冬瓜茶一路吃透透！',
-          notes: '可打開「晴寶小吃心願選單」即時打勾標記！即時連線 Firebase 記錄 🟢'
+          time: '11:00 - 11:10',
+          title: 'Check out : 煙波大飯店',
+          category: 'hotel',
+          location: '台南煙波大飯店',
+          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Lakeshore+Hotel+Tainan',
+          description: '睡得好嗎~ 這兩天有沒有充電的感覺呢！辦理退房，準備享受最後一天的府城行程。',
+          notes: ''
         },
         {
           id: 'act-3-2',
-          time: '13:30 - 16:30',
+          time: '11:30 - 13:15',
+          title: '🐟 靜日初',
+          category: 'dining',
+          location: '台南市東區裕學路47號',
+          locationUrl: 'https://www.google.com/maps/search/?api=1&query=靜日初+台南市東區裕學路47號',
+          description: '與身邊重要的人，來靜日初好好吃頓暖心好飯吧。',
+          notes: ''
+        },
+        {
+          id: 'act-3-3',
+          time: '13:45 - 17:30',
           title: '🏛️ 奇美博物館 · 埃及木乃伊常設展 ＆ 沉浸式 VR 科技互動體驗',
           category: 'sightseeing',
           location: '台南市仁德區文華路二段66號 (奇美博物館)',
           locationUrl: 'https://www.google.com/maps/search/?api=1&query=Chimei+Museum',
           description: '漫步如歐洲宮廷般的奇美博物館，參觀珍貴的古埃及木乃伊與世界級樂器兵器展，戴上 VR 眼鏡體驗沉浸式虛擬科技展演！',
-          notes: '已預約 13:30 門票＋特展 VR 科技體驗 🥽'
-        },
-        {
-          id: 'act-3-3',
-          time: '18:00 - 20:00',
-          title: '🥩🔥 蔡寶私心敲碗已久的頂級燒肉盛宴！大口吃和牛慶祝',
-          category: 'dining',
-          location: '台南頂級燒肉 (碳佐麻里 精品燒肉 / 燒肉同話)',
-          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Tanzuomali+Boutique+Yakiniku+Tainan',
-          description: '蔡寶一直心心念念想吃的頂級燒肉！點滿極上 A5 和牛、厚切牛舌、伊比利豬與海鮮拼盤，炭火滋滋作響，大口滿足！',
-          notes: '已預約 18:00 雙人座位，作為這趟慶生之旅的最完美壓軸！'
+          notes: '已預約 13:45 門票＋特展 VR 科技體驗 🥽'
         },
         {
           id: 'act-3-4',
-          time: '20:30 - 22:30',
+          time: '18:00 - 20:00',
+          title: '🥩🔥 Pankoko。旬味酒食所',
+          category: 'dining',
+          location: 'Pankoko餐飲集團',
+          locationUrl: 'https://www.google.com/maps/search/?api=1&query=Pankoko+旬味酒食所',
+          description: '蔡寶一直心心念念想吃的頂級燒肉！點滿極上 A5 和牛、厚切牛舌、伊比利豬與海鮮拼盤，炭火滋滋作響，大口滿足！',
+          notes: '預計訂位 18:00'
+        },
+        {
+          id: 'act-3-5',
+          time: '20:00 - 22:00',
           title: '🏡 滿載回憶與晴寶笑容，開車平安回程溫暖台中',
           category: 'transit',
           location: '台南 ➡️ 國道一號北上 ➡️ 台中溫馨的家',

@@ -172,6 +172,7 @@ export interface TimePreset {
   label: string;
   badge: string;
   iso: string | null;
+  group?: string;
 }
 
 export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
@@ -181,91 +182,268 @@ export const TIME_SIMULATOR_PRESETS: TimePreset[] = [
     badge: '系統時間',
     iso: null
   },
-  {
-    id: 'sim_before_trip',
-    label: '9/14 10:00 (出發前一個月 · 行程保密中)',
-    badge: '全行程封存未開放',
-    iso: '2026-09-14T10:00:00'
-  },
+  // ── Day 1 (10/16 五) 奔向府城 ──
   {
     id: 'd1_before_trip',
     label: '10/16 14:00 (Day 1 出發前 1 小時 · 解鎖 Day 1 總結與出發)',
     badge: '解鎖 Day 1 總結',
-    iso: '2026-10-16T14:00:00'
+    iso: '2026-10-16T14:00:00',
+    group: 'Day 1 (10/16 五) 奔向府城'
+  },
+  {
+    id: 'd1_departure',
+    label: '10/16 15:00 (Day 1 🚗 請半天假！台中公司甜蜜出發直奔台南)',
+    badge: '15:00 甜蜜啟程',
+    iso: '2026-10-16T15:00:00',
+    group: 'Day 1 (10/16 五) 奔向府城'
   },
   {
     id: 'd1_hotel_checkin',
-    label: '10/16 16:30 (Day 1 入住煙波前)',
-    badge: '解鎖飯店入住',
-    iso: '2026-10-16T16:30:00'
+    label: '10/16 17:00 (Day 1 🏨 抵達「台南煙波大飯店」辦理入住 Check-in)',
+    badge: '17:00 煙波入住',
+    iso: '2026-10-16T17:00:00',
+    group: 'Day 1 (10/16 五) 奔向府城'
   },
   {
-    id: 'd1_dinner_time',
-    label: '10/16 18:00 (Day 1 煙波晚餐 🍽️ 即時情境通知)',
-    badge: '觸發 18:00 晚餐通知',
-    iso: '2026-10-16T18:00:00'
+    id: 'd1_restaurant_dinner',
+    label: '10/16 18:30 (Day 1 🍽️ 煙波大飯店「隱糧義式餐酒館」浪漫精緻晚餐)',
+    badge: '18:30 隱糧晚餐',
+    iso: '2026-10-16T18:30:00',
+    group: 'Day 1 (10/16 五) 奔向府城'
   },
   {
     id: 'd1_spa_time',
-    label: '10/16 20:30 (Day 1 煙波三溫暖 🧖‍♀️ 水療舒壓通知)',
-    badge: '觸發 20:30 三溫暖通知',
-    iso: '2026-10-16T20:30:00'
+    label: '10/16 20:30 (Day 1 🧖‍♀️ 煙波三溫暖水療放鬆 · 泡湯舒壓)',
+    badge: '20:30 三溫暖',
+    iso: '2026-10-16T20:30:00',
+    group: 'Day 1 (10/16 五) 奔向府城'
   },
   {
     id: 'd1_clinic_night',
-    label: '10/16 23:00 (Day 1 密醫看診 🩺 即時情境通知)',
-    badge: '觸發 23:00 密醫特診',
-    iso: '2026-10-16T23:00:00'
+    label: '10/16 23:00 (Day 1 🩺💖 洗完澡了～進入「密醫看診時間」！)',
+    badge: '23:00 密醫特診',
+    iso: '2026-10-16T23:00:00',
+    group: 'Day 1 (10/16 五) 奔向府城'
   },
+  // ── Day 2 (10/17 六) 🎂 晴寶生日大日子 ──
   {
-    id: 'd2_birthday_morning',
-    label: '10/17 00:00 (Day 2 晴寶生日大日子到來 ✨)',
+    id: 'd2_birthday_midnight',
+    label: '10/17 00:00 (Day 2 🎂 晴寶生日跨日到來 · 祝晴寶生日快樂！)',
     badge: '10/17 生日跨日',
-    iso: '2026-10-17T00:00:00'
+    iso: '2026-10-17T00:00:00',
+    group: 'Day 2 (10/17 六) 🎂 生日大日子'
   },
   {
     id: 'd2_breakfast_before',
     label: '10/17 07:30 (Day 2 早餐前 1 小時 · 解鎖 Day 2 總結與早餐)',
     badge: '解鎖 Day 2 總結',
-    iso: '2026-10-17T07:30:00'
+    iso: '2026-10-17T07:30:00',
+    group: 'Day 2 (10/17 六) 🎂 生日大日子'
   },
   {
-    id: 'd2_leather_craft',
-    label: '10/17 13:00 (Day 2 質感手作皮革體驗 🔨 親手敲印紀念)',
-    badge: '13:00 皮革手作',
-    iso: '2026-10-17T13:00:00'
+    id: 'd2_buffet_breakfast',
+    label: '10/17 08:30 (Day 2 🥐 煙波大飯店「隱糧」超豐盛自助早餐)',
+    badge: '08:30 自助早餐',
+    iso: '2026-10-17T08:30:00',
+    group: 'Day 2 (10/17 六) 🎂 生日大日子'
   },
   {
-    id: 'd2_leather_escape',
-    label: '10/17 15:00 (Day 2 密室逃脫特務 🗝️ 默契挑戰通知)',
-    badge: '觸發 15:00 密室通知',
-    iso: '2026-10-17T15:00:00'
+    id: 'd2_gym_workout',
+    label: '10/17 10:30 (Day 2 🔨 飯店健身房運動 · 活力流汗)',
+    badge: '10:30 健身房運動',
+    iso: '2026-10-17T10:30:00',
+    group: 'Day 2 (10/17 六) 🎂 生日大日子'
   },
   {
-    id: 'd2_french_dinner',
-    label: '10/17 18:00 (Day 2 生日慶生晚餐 🎂 客製寫字盤即時通知)',
-    badge: '觸發 18:00 生日大餐通知',
-    iso: '2026-10-17T18:00:00'
+    id: 'd2_escape_room',
+    label: '10/17 13:15 (Day 2 🗝️ 台南密室逃脫挑戰 · 腦力激盪與默契大考驗)',
+    badge: '13:15 密室逃脫',
+    iso: '2026-10-17T13:15:00',
+    group: 'Day 2 (10/17 六) 🎂 生日大日子'
   },
   {
-    id: 'd3_snacks_tour',
-    label: '10/18 08:30 (Day 3 小吃前 1 小時 · 解鎖 Day 3 總結與小吃)',
+    id: 'd2_pool_swim',
+    label: '10/17 15:00 (Day 2 🏊‍♀️ 煙波戶外水療露天泳池 · 玩水放鬆 & 拍美照)',
+    badge: '15:00 泳池玩水',
+    iso: '2026-10-17T15:00:00',
+    group: 'Day 2 (10/17 六) 🎂 生日大日子'
+  },
+  {
+    id: 'd2_birthday_dinner',
+    label: '10/17 18:00 (Day 2 🎂 晴寶生日慶生晚餐 - 走心Zonuxin Bistro & Wine)',
+    badge: '18:00 走心慶生晚餐',
+    iso: '2026-10-17T18:00:00',
+    group: 'Day 2 (10/17 六) 🎂 生日大日子'
+  },
+  {
+    id: 'd2_bedside_surprise',
+    label: '10/17 20:30 (Day 2 ✨ 床頭驚喜 - 真情告白卡片 & 秘密生日大禮)',
+    badge: '20:30 床頭驚喜',
+    iso: '2026-10-17T20:30:00',
+    group: 'Day 2 (10/17 六) 🎂 生日大日子'
+  },
+  // ── Day 3 (10/18 日) 奇美VR與頂級燒肉 ──
+  {
+    id: 'd3_unlock_morning',
+    label: '10/18 10:00 (Day 3 退房前 1 小時 · 解鎖 Day 3 總結)',
     badge: '解鎖 Day 3 總結',
-    iso: '2026-10-18T08:30:00'
+    iso: '2026-10-18T10:00:00',
+    group: 'Day 3 (10/18 日) 退房、奇美與燒肉'
   },
   {
-    id: 'd3_bbq_finale',
-    label: '10/18 18:00 (Day 3 蔡寶私心頂級燒肉 🥩 行程晚餐)',
-    badge: '18:00 燒肉晚餐',
-    iso: '2026-10-18T18:00:00'
+    id: 'd3_hotel_checkout',
+    label: '10/18 11:00 (Day 3 🏨 Check out : 煙波大飯店)',
+    badge: '11:00 煙波退房',
+    iso: '2026-10-18T11:00:00',
+    group: 'Day 3 (10/18 日) 退房、奇美與燒肉'
+  },
+  {
+    id: 'd3_lunch_restaurant',
+    label: '10/18 11:30 (Day 3 🐟 靜日初 · 暖心好飯)',
+    badge: '11:30 靜日初午餐',
+    iso: '2026-10-18T11:30:00',
+    group: 'Day 3 (10/18 日) 退房、奇美與燒肉'
+  },
+  {
+    id: 'd3_chimei_museum',
+    label: '10/18 13:45 (Day 3 🏛️ 奇美博物館 · 埃及木乃伊常設展 ＆ 沉浸式 VR 科技互動體驗)',
+    badge: '13:45 奇美博物館',
+    iso: '2026-10-18T13:45:00',
+    group: 'Day 3 (10/18 日) 退房、奇美與燒肉'
+  },
+  {
+    id: 'd3_bbq_dinner',
+    label: '10/18 18:00 (Day 3 🥩🔥 Pankoko。旬味酒食所 · 頂級燒肉盛宴)',
+    badge: '18:00 Pankoko燒肉',
+    iso: '2026-10-18T18:00:00',
+    group: 'Day 3 (10/18 日) 退房、奇美與燒肉'
+  },
+  {
+    id: 'd3_drive_home',
+    label: '10/18 20:00 (Day 3 🏡 滿載回憶與晴寶笑容，開車平安回程溫暖台中)',
+    badge: '20:00 回程台中',
+    iso: '2026-10-18T20:00:00',
+    group: 'Day 3 (10/18 日) 退房、奇美與燒肉'
   },
   {
     id: 'd3_trip_completed',
-    label: '10/18 23:00 (Day 3 行程圓滿完成)',
-    badge: '全部驚喜全部解鎖',
-    iso: '2026-10-18T23:00:00'
+    label: '10/18 23:00 (Day 3 🎉 旅程大圓滿 · 解鎖所有彩蛋與回憶)',
+    badge: '全部行程解鎖',
+    iso: '2026-10-18T23:00:00',
+    group: 'Day 3 (10/18 日) 退房、奇美與燒肉'
   }
 ];
+
+// Helper to dynamically build presets from current itinerary to always stay 100% in sync with 每日行程表
+export function buildPresetsFromItinerary(itinerary?: any[]): TimePreset[] {
+  if (!itinerary || !Array.isArray(itinerary) || itinerary.length === 0) {
+    return TIME_SIMULATOR_PRESETS;
+  }
+
+  const presets: TimePreset[] = [
+    {
+      id: 'realtime',
+      label: '⏰ 當前真實時間',
+      badge: '系統時間',
+      iso: null
+    }
+  ];
+
+  itinerary.forEach((day: any) => {
+    const dayNumber = day.dayNumber || 1;
+    const dateStr = day.date || `2026-10-${15 + dayNumber}`;
+    const dateParts = dateStr.split('-');
+    const monthDay = dateParts.length === 3 ? `${Number(dateParts[1])}/${Number(dateParts[2])}` : dateStr;
+    const weekdayMap = ['日', '一', '二', '三', '四', '五', '六'];
+    let weekdayStr = '';
+    try {
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        weekdayStr = weekdayMap[d.getDay()] ? ` (${weekdayMap[d.getDay()]})` : '';
+      }
+    } catch (e) {}
+
+    const groupTitle = `Day ${dayNumber}${weekdayStr} ${day.themeTitle ? day.themeTitle.split(':')[1]?.trim() || day.themeTitle : ''}`;
+
+    // Add day unlock or midnight milestone
+    if (dayNumber === 2) {
+      presets.push({
+        id: `d${dayNumber}_midnight`,
+        label: `${monthDay} 00:00 (Day ${dayNumber} 🎂 晴寶生日跨日到來 · 祝晴寶生日快樂！)`,
+        badge: '10/17 生日跨日',
+        iso: `${dateStr}T00:00:00`,
+        group: groupTitle
+      });
+    }
+
+    const activities = day.activities || [];
+    if (activities.length > 0) {
+      // 1 hour before first activity
+      const firstTimeMatch = (activities[0].time || '09:00').match(/(\d{1,2}):(\d{2})/);
+      if (firstTimeMatch) {
+        let firstH = parseInt(firstTimeMatch[1], 10);
+        let firstM = firstTimeMatch[2];
+        let unlockH = Math.max(0, firstH - 1);
+        const unlockHStr = unlockH.toString().padStart(2, '0');
+        presets.push({
+          id: `d${dayNumber}_unlock_day`,
+          label: `${monthDay} ${unlockHStr}:${firstM} (Day ${dayNumber} 行程前 1 小時 · 解鎖 Day ${dayNumber} 總結)`,
+          badge: `解鎖 Day ${dayNumber} 總結`,
+          iso: `${dateStr}T${unlockHStr}:${firstM}:00`,
+          group: groupTitle
+        });
+      }
+
+      // Add each activity from the itinerary
+      activities.forEach((act: any, idx: number) => {
+        const timeMatch = (act.time || '').match(/(\d{1,2}):(\d{2})/);
+        const timeStr = timeMatch ? `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}` : '10:00';
+        const cleanTitle = (act.title || '').replace(/^(\d{1,2}:\d{2}\s*[-~至]\s*\d{1,2}:\d{2}\s*)/, '').trim();
+        
+        let badge = `${timeStr}`;
+        if (cleanTitle.includes('Check in') || cleanTitle.includes('入住')) badge += ' 煙波入住';
+        else if (cleanTitle.includes('Check out') || cleanTitle.includes('退房')) badge += ' 煙波退房';
+        else if (cleanTitle.includes('早餐')) badge += ' 自助早餐';
+        else if (cleanTitle.includes('出發')) badge += ' 甜蜜啟程';
+        else if (cleanTitle.includes('健身房')) badge += ' 健身房運動';
+        else if (cleanTitle.includes('密室')) badge += ' 密室逃脫';
+        else if (cleanTitle.includes('泳池')) badge += ' 泳池玩水';
+        else if (cleanTitle.includes('走心') || cleanTitle.includes('慶生晚餐')) badge += ' 走心慶生晚餐';
+        else if (cleanTitle.includes('隱糧') || cleanTitle.includes('義式')) badge += ' 隱糧晚餐';
+        else if (cleanTitle.includes('床頭')) badge += ' 床頭驚喜';
+        else if (cleanTitle.includes('三溫暖')) badge += ' 三溫暖';
+        else if (cleanTitle.includes('密醫')) badge += ' 密醫特診';
+        else if (cleanTitle.includes('靜日初')) badge += ' 靜日初午餐';
+        else if (cleanTitle.includes('奇美')) badge += ' 奇美博物館';
+        else if (cleanTitle.includes('Pankoko') || cleanTitle.includes('燒肉')) badge += ' Pankoko燒肉';
+        else if (cleanTitle.includes('回程') || cleanTitle.includes('台中')) badge += ' 回程台中';
+        else {
+          const stripped = cleanTitle.replace(/^[\s\S]*?[🚗🏨🍽️🧖‍♀️🩺🥐🔨🗝️🏊‍♀️🎂✨🍜🏛️🥩🏡\s]+/u, '').trim();
+          badge += ` ${stripped.substring(0, 5) || cleanTitle.substring(0, 5)}`;
+        }
+
+        presets.push({
+          id: `act_${act.id || idx}`,
+          label: `${monthDay} ${timeStr} (Day ${dayNumber} ${cleanTitle})`,
+          badge,
+          iso: `${dateStr}T${timeStr}:00`,
+          group: groupTitle
+        });
+      });
+    }
+  });
+
+  // End of trip milestone
+  presets.push({
+    id: 'd3_trip_completed',
+    label: '10/18 23:00 (Day 3 🎉 旅程大圓滿 · 解鎖所有彩蛋與回憶)',
+    badge: '全部行程解鎖',
+    iso: '2026-10-18T23:00:00',
+    group: 'Day 3 旅程圓滿'
+  });
+
+  return presets;
+}
 
 // Helper to parse time string like "10:00 - 11:00" or "09:30" into minutes from 00:00
 export function parseTimeToMinutes(timeStr: string): number {

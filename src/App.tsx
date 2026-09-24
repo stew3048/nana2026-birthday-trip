@@ -23,7 +23,7 @@ import { ThemeStudioView } from './components/ThemeStudioView';
 import { useAuth } from './context/AuthContext';
 import { BirthdayTripData, ActivityItem, SurpriseItem, DayHighlightCard } from './types';
 import { loadTripData, saveTripData, syncTripToCloud, subscribeToTripFromCloud, fetchTripFromCloud } from './utils/storage';
-import { TIME_SIMULATOR_PRESETS, sortSurprisesByStartTime, sortScenariosByStartTime, extractScenarioDateTimeComponents, extractTimestampFromTiming } from './utils/timeLock';
+import { TIME_SIMULATOR_PRESETS, TimePreset, sortSurprisesByStartTime, sortScenariosByStartTime, extractScenarioDateTimeComponents, extractTimestampFromTiming } from './utils/timeLock';
 import { updateConsolidatedSurprises, getConsolidatedSurprises } from './utils/surpriseSync';
 import { getSynchronizedAlertScenarios } from './utils/alertScenariosSync';
 import confetti from 'canvas-confetti';
@@ -541,7 +541,7 @@ export default function App() {
   };
 
   // Time simulator handler for Boyfriend
-  const handleTimeSimulatorPresetSelect = (preset: typeof TIME_SIMULATOR_PRESETS[0]) => {
+  const handleTimeSimulatorPresetSelect = (preset: TimePreset) => {
     setSimulatedTime(preset.iso);
 
     if (!preset.iso) {
@@ -552,33 +552,34 @@ export default function App() {
 
     let scenario: LiveAlertScenario | undefined;
 
-    // 1. Dynamic match by triggerTime (within 30 minutes)
+    // Only auto-trigger scenario pop-up if the preset is an alert trigger or matches exact surprise timing (within 15 mins)
+    const isExplicitTriggerPreset = (preset.badge || '').includes('觸發') || (preset.label || '').includes('彈窗');
+
     if (preset.iso) {
       const presetTs = new Date(preset.iso).getTime();
       scenario = allScenarios.find(s => {
         const sTs = extractTimestampFromTiming(s.triggerTime);
-        return Math.abs(sTs - presetTs) <= 30 * 60 * 1000;
+        return Math.abs(sTs - presetTs) <= (isExplicitTriggerPreset ? 30 * 60 * 1000 : 15 * 60 * 1000);
       });
     }
 
-    // 2. Keyword fallback match if specific scenario preset
-    if (!scenario) {
+    if (!scenario && isExplicitTriggerPreset) {
       const pLabel = preset.label;
       scenario = allScenarios.find(s => {
         if (pLabel.includes('三溫暖') && s.title.includes('三溫暖')) return true;
         if (pLabel.includes('密醫') && s.title.includes('密醫')) return true;
         if (pLabel.includes('密室') && s.title.includes('密室')) return true;
-        if (pLabel.includes('大餐') && (s.title.includes('晚餐') || s.title.includes('大餐'))) return true;
+        if ((pLabel.includes('大餐') || pLabel.includes('晚餐')) && (s.title.includes('晚餐') || s.title.includes('大餐'))) return true;
         return false;
       });
     }
 
-    if (scenario) {
+    if (scenario && isExplicitTriggerPreset) {
       handleTriggerScenario(scenario);
       return;
     }
 
-    // If selecting a non-surprise moment (e.g. 10/16 16:30 hotel checkin or 00:00 midnight),
+    // If selecting a general milestone (e.g. 10/16 17:00 hotel checkin, 18:30 dinner, or 00:00 midnight),
     // clear activeLiveAlert so previous alerts won't pop up!
     if (tripData.activeLiveAlert) {
       const updated: BirthdayTripData = {
@@ -972,6 +973,7 @@ export default function App() {
         onOpenThemeStudio={() => setActiveTab('themes')}
         onSelectTimePreset={handleTimeSimulatorPresetSelect}
         onResetAlerts={handleResetAllSurprisesAndAlerts}
+        itinerary={tripData.itinerary}
       />
 
       {/* Top Sticky Navigation Header */}

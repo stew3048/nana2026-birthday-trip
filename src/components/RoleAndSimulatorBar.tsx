@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   ShieldCheck, 
   Sparkles, 
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { TIME_SIMULATOR_PRESETS } from '../utils/timeLock';
+import { TIME_SIMULATOR_PRESETS, buildPresetsFromItinerary, TimePreset } from '../utils/timeLock';
 import { APP_THEMES } from '../utils/themes';
 
 interface RoleAndSimulatorBarProps {
@@ -31,8 +31,9 @@ interface RoleAndSimulatorBarProps {
   onOpenSettings?: () => void;
   onOpenDbInspector?: () => void;
   onOpenThemeStudio?: () => void;
-  onSelectTimePreset?: (preset: typeof TIME_SIMULATOR_PRESETS[0]) => void;
+  onSelectTimePreset?: (preset: TimePreset) => void;
   onResetAlerts?: () => void;
+  itinerary?: any[];
 }
 
 export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
@@ -42,7 +43,8 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
   onOpenDbInspector,
   onOpenThemeStudio,
   onSelectTimePreset,
-  onResetAlerts
+  onResetAlerts,
+  itinerary
 }) => {
   const { 
     user, 
@@ -67,6 +69,8 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  const presets = useMemo(() => buildPresetsFromItinerary(itinerary), [itinerary]);
+
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
     try {
@@ -79,13 +83,13 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
   };
 
   const currentPreset = simulatedTime 
-    ? (TIME_SIMULATOR_PRESETS.find(p => p.iso === simulatedTime) || {
+    ? (presets.find(p => p.iso === simulatedTime) || {
         id: 'custom',
         label: `模擬時間: ${new Date(simulatedTime).toLocaleDateString()} ${new Date(simulatedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
         badge: '自訂',
         iso: simulatedTime
       })
-    : TIME_SIMULATOR_PRESETS[0];
+    : presets[0];
 
   const pad = (n: number) => n.toString().padStart(2, '0');
   const formattedEffectiveTime = `${effectiveTime.getFullYear()}/${pad(effectiveTime.getMonth() + 1)}/${pad(effectiveTime.getDate())} ${pad(effectiveTime.getHours())}:${pad(effectiveTime.getMinutes())}`;
@@ -340,7 +344,7 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
                       <button
                         onClick={() => {
                           if (onSelectTimePreset) {
-                            onSelectTimePreset(TIME_SIMULATOR_PRESETS[0]);
+                            onSelectTimePreset(presets[0]);
                           } else {
                             setSimulatedTime(null);
                           }
@@ -371,38 +375,52 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
                       <div className="px-3 pt-1 text-[10px] font-bold text-[var(--romantic-muted,#64748B)] uppercase tracking-wider">
                         📅 3日行程重要時刻情境快速測試：
                       </div>
-                      {TIME_SIMULATOR_PRESETS.filter(p => p.iso !== null).map((p) => {
-                        const isSelected = p.iso === simulatedTime;
-                        return (
-                          <button
-                            key={p.id}
-                            onClick={() => {
-                              if (onSelectTimePreset) {
-                                onSelectTimePreset(p);
-                              } else {
-                                setSimulatedTime(p.iso);
-                              }
-                              setShowTimeMenu(false);
-                            }}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                              isSelected
-                                ? 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose-deep,#0369A1)] font-bold border border-[var(--romantic-border,#BAE6FD)]'
-                                : 'text-[var(--romantic-ink,#0F172A)] hover:bg-[var(--romantic-rose-light,#F0F9FF)]'
-                            }`}
-                          >
-                            <div className="truncate mr-2">
-                              <div>{p.label}</div>
-                            </div>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 border ${
-                              isSelected
-                                ? 'bg-[var(--romantic-rose,#0284C7)] text-white border-transparent'
-                                : 'bg-slate-100 text-[var(--romantic-muted,#64748B)] border-[var(--romantic-border,#BAE6FD)]'
-                            }`}>
-                              {p.badge}
-                            </span>
-                          </button>
-                        );
-                      })}
+                      {(() => {
+                        let lastGroup = '';
+                        return presets.filter(p => p.iso !== null).map((p) => {
+                          const isSelected = p.iso === simulatedTime;
+                          const hasNewGroup = p.group && p.group !== lastGroup;
+                          if (hasNewGroup) {
+                            lastGroup = p.group || '';
+                          }
+                          return (
+                            <React.Fragment key={p.id}>
+                              {hasNewGroup && (
+                                <div className="px-3 pt-2.5 pb-1 text-[11px] font-bold text-[var(--romantic-ink,#0F172A)] border-t border-[var(--romantic-border,#BAE6FD)]/40 mt-1.5 first:border-t-0 first:mt-0 flex items-center justify-between">
+                                  <span>{p.group}</span>
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (onSelectTimePreset) {
+                                    onSelectTimePreset(p);
+                                  } else {
+                                    setSimulatedTime(p.iso);
+                                  }
+                                  setShowTimeMenu(false);
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose-deep,#0369A1)] font-bold border border-[var(--romantic-border,#BAE6FD)]'
+                                    : 'text-[var(--romantic-ink,#0F172A)] hover:bg-[var(--romantic-rose-light,#F0F9FF)]'
+                                }`}
+                              >
+                                <div className="truncate mr-2">
+                                  <div>{p.label}</div>
+                                </div>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 border ${
+                                  isSelected
+                                    ? 'bg-[var(--romantic-rose,#0284C7)] text-white border-transparent font-bold'
+                                    : 'bg-slate-100 text-[var(--romantic-muted,#64748B)] border-[var(--romantic-border,#BAE6FD)]'
+                                }`}>
+                                  {p.badge}
+                                </span>
+                              </button>
+                            </React.Fragment>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 </>
