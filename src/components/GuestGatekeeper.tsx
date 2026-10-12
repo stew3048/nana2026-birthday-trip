@@ -135,34 +135,38 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
             </div>
           </div>
 
-          {/* Authorized Whitelist Notice */}
+          {/* Authorized Whitelist Notice without revealing raw emails */}
           <div className="w-full p-4 rounded-2xl bg-[#FAF6F0] border border-[#E8DFC8] text-left space-y-2.5">
             <div className="flex items-center space-x-1.5 text-xs font-bold text-[#4A3B32]">
               <ShieldCheck className="w-4 h-4 text-[#BA5444]" />
-              <span>系統僅授權以下 2 組指定 Google 帳號登入：</span>
+              <span>系統受隱私保護，僅限專屬指定身分登入存取：</span>
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E8DFC8]">
-                <div className="flex items-center space-x-1.5">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#E8DFC8]">
+                <div className="flex items-center space-x-2">
                   <Crown className="w-3.5 h-3.5 text-[#C5A059]" />
-                  <span className="font-semibold text-[#2C221E]">👑 蔡寶（全權管理）</span>
+                  <span className="font-semibold text-[#2C221E]">👑 蔡寶（策劃人專屬通道）</span>
                 </div>
-                <span className="font-mono text-[11px] text-[#8C6A28] font-bold">
-                  {boyfriendEmail}
+                <span className="text-[11px] text-[#8C6A28] font-medium bg-[#FFFBF0] px-2.5 py-0.5 rounded-md border border-[#E3D1AC]">
+                  已綁定專屬帳號
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#ECD9CE]">
-                <div className="flex items-center space-x-1.5">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[#ECD9CE]">
+                <div className="flex items-center space-x-2">
                   <Heart className="w-3.5 h-3.5 text-[#BA5444] fill-[#BA5444]" />
-                  <span className="font-semibold text-[#2C221E]">⭐ 晴寶（壽星女主角）</span>
+                  <span className="font-semibold text-[#2C221E]">⭐ 晴寶（壽星女主角通道）</span>
                 </div>
-                <span className="font-mono text-[11px] text-[#9E4738] font-bold">
-                  {girlfriendEmail}
+                <span className="text-[11px] text-[#9E4738] font-medium bg-[#FCF5F3] px-2.5 py-0.5 rounded-md border border-[#ECD2CA]">
+                  已綁定專屬帳號
                 </span>
               </div>
             </div>
+
+            <p className="text-[11px] text-[#8A796E] leading-relaxed pt-1">
+              💡 若您是蔡寶或晴寶本人，請點擊下方按鈕切換至平常使用的專屬 Google 帳號。
+            </p>
           </div>
 
           {loginError && (
@@ -273,7 +277,7 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
                 <span className="font-semibold text-[#2C221E]">👑 蔡寶（管理員專屬通道）</span>
               </div>
               <span className="text-[10px] text-[#8C6A28] bg-[#FFFFFF] px-2 py-0.5 rounded-md border border-[#E3D1AC] font-medium">
-                {boyfriendEmail}
+                已綁定專屬帳號
               </span>
             </div>
 
@@ -283,7 +287,7 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
                 <span className="font-semibold text-[#2C221E]">⭐ 晴寶（壽星女主角專屬通道）</span>
               </div>
               <span className="text-[10px] text-[#9E4738] bg-[#FFFFFF] px-2 py-0.5 rounded-md border border-[#ECD2CA] font-medium">
-                {girlfriendEmail}
+                已綁定專屬帳號
               </span>
             </div>
           </div>

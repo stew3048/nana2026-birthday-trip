@@ -22,7 +22,7 @@ export const GuestLoginModal: React.FC<GuestLoginModalProps> = ({
   onClose,
   actionReason
 }) => {
-  const { login, defaultBoyfriendEmail, defaultGirlfriendEmail } = useAuth();
+  const { login } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -92,8 +92,8 @@ export const GuestLoginModal: React.FC<GuestLoginModalProps> = ({
                 <Crown className="w-4 h-4 text-[#C5A059]" />
                 <span className="font-bold text-[#2C221E]">👑 蔡寶（管理員）</span>
               </div>
-              <span className="font-mono text-[11px] text-[#8C6A28] bg-white px-2 py-0.5 rounded-md border border-[#E3D1AC]">
-                {defaultBoyfriendEmail || 'stew3048@gmail.com'}
+              <span className="text-[11px] text-[#8C6A28] bg-white px-2.5 py-0.5 rounded-md border border-[#E3D1AC] font-medium">
+                已綁定專屬帳號
               </span>
             </div>
 
@@ -102,8 +102,8 @@ export const GuestLoginModal: React.FC<GuestLoginModalProps> = ({
                 <Heart className="w-4 h-4 text-[#BA5444] fill-[#BA5444]" />
                 <span className="font-bold text-[#2C221E]">⭐ 晴寶（壽星女主角）</span>
               </div>
-              <span className="font-mono text-[11px] text-[#9E4738] bg-white px-2 py-0.5 rounded-md border border-[#ECD2CA]">
-                {defaultGirlfriendEmail || 'sng828388@gmail.com'}
+              <span className="text-[11px] text-[#9E4738] bg-white px-2.5 py-0.5 rounded-md border border-[#ECD2CA] font-medium">
+                已綁定專屬帳號
               </span>
             </div>
           </div>

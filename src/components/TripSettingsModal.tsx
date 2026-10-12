@@ -197,7 +197,7 @@ export const TripSettingsModal: React.FC<TripSettingsModalProps> = ({
                   type="email"
                   value={formData.boyfriendEmail || ''}
                   onChange={(e) => setFormData({ ...formData, boyfriendEmail: e.target.value })}
-                  placeholder="例如：stew3048@gmail.com"
+                  placeholder="例如：boyfriend@gmail.com"
                   className="w-full px-3.5 py-2 rounded-xl bg-white border border-[var(--romantic-border,#BAE6FD)] focus:outline-[var(--romantic-rose,#0284C7)] font-mono text-xs text-[var(--romantic-ink,#0F172A)]"
                 />
                 <span className="text-[11px] text-[var(--romantic-muted,#64748B)] mt-0.5 block">
