@@ -243,7 +243,10 @@ export const SurprisePlanner: React.FC<SurprisePlannerProps> = ({
                       {isRevealedForGirlfriend ? '✨ 已揭曉驚喜' : '🔒 神秘封存中'}
                     </span>
                     <div className={`text-xs mt-0.5 ${isRevealedForGirlfriend ? 'text-[var(--romantic-muted,#64748B)]' : 'text-slate-400'}`}>
-                      ⏰ {item.timing} · 📍 {item.location}
+                      <span>⏰ {item.timing}</span>
+                      {(isRevealedForGirlfriend || isBoyfriend) && item.location ? (
+                        <span> · 📍 {item.location}</span>
+                      ) : null}
                     </div>
                   </div>
                 </div>

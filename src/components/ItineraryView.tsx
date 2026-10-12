@@ -28,9 +28,12 @@ import {
   Star,
   Hourglass,
   ArrowUpDown,
-  ListOrdered
+  ListOrdered,
+  Key,
+  X,
+  CheckCircle2
 } from 'lucide-react';
-import { ActivityCategory, ActivityItem, DayItinerary } from '../types';
+import { ActivityCategory, ActivityItem, DayItinerary, SurpriseItem } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { getActivityLockStatus, getDayLockSummary, sortActivitiesChronologically } from '../utils/timeLock';
 
@@ -39,6 +42,7 @@ interface ItineraryViewProps {
   onUpdateItinerary: (newItinerary: DayItinerary[]) => void;
   secretModePassword?: string;
   onSyncSecretSurprise?: (activity: ActivityItem, dayNumber: number, isDeleted?: boolean) => void;
+  surprises?: SurpriseItem[];
 }
 
 const TIME_OPTIONS = [
@@ -63,7 +67,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   itinerary,
   onUpdateItinerary,
   secretModePassword = '0520',
-  onSyncSecretSurprise
+  onSyncSecretSurprise,
+  surprises = []
 }) => {
   const { 
     isBoyfriend, 
@@ -75,7 +80,11 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   } = useAuth();
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [isSecretRevealed, setIsSecretRevealed] = useState(false);
+  const [unlockedActivityIds, setUnlockedActivityIds] = useState<string[]>([]);
+  const [passwordUnlockModalAct, setPasswordUnlockModalAct] = useState<ActivityItem | null>(null);
+  const [unlockPasswordInput, setUnlockPasswordInput] = useState('');
+  const [unlockError, setUnlockError] = useState('');
+  const [unlockSuccess, setUnlockSuccess] = useState('');
   const [isEditingActivity, setIsEditingActivity] = useState(false);
   const [editingItem, setEditingItem] = useState<{
     dayIndex: number;
@@ -192,6 +201,36 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       isNew: true
     });
     setIsEditingActivity(true);
+  };
+
+  const handlePasswordUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordUnlockModalAct) return;
+
+    const input = unlockPasswordInput.trim();
+    const targetCode = (passwordUnlockModalAct.surpriseUnlockCode || secretModePassword || '0520').trim();
+
+    if (input === targetCode || input === '0520' || input === '1017' || input === secretModePassword) {
+      setUnlockSuccess('🎉 通關密語正確！浪漫驚喜已正式解鎖揭曉！');
+      setUnlockError('');
+      setUnlockedActivityIds(prev => [...prev, passwordUnlockModalAct.id]);
+
+      if (onSyncSecretSurprise) {
+        onSyncSecretSurprise(
+          { ...passwordUnlockModalAct, isSecretSurprise: true },
+          itinerary[selectedDayIndex]?.dayNumber || 1,
+          false
+        );
+      }
+
+      setTimeout(() => {
+        setPasswordUnlockModalAct(null);
+        setUnlockPasswordInput('');
+        setUnlockSuccess('');
+      }, 1000);
+    } else {
+      setUnlockError('密碼不太對喔！試試妳的生日 (1017) 或愛意密語 (0520) 吧 💕');
+    }
   };
 
   const handleOpenEditActivity = (act: ActivityItem) => {
@@ -603,8 +642,18 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               const badge = getCategoryBadge(act.category);
               const lockStatus = getActivityLockStatus(currentDay.date, act.time, effectiveTime);
               
-              const isTimeLocked = isLockEnforced && !lockStatus.isUnlocked;
-              const isHiddenSurprise = act.isSecretSurprise && isLockEnforced;
+              // Unlocked if time reached (1 hour prior or at start time) OR manually unlocked
+              const isTimeUnlocked = lockStatus.isUnlocked;
+              const isManuallyUnlocked = unlockedActivityIds.includes(act.id) || 
+                Boolean(surprises?.find(s => (s.activityId === act.id || s.id === `surp-act-${act.id}`) && s.isUnlocked));
+
+              const isActivityRevealed = !isLockEnforced || isTimeUnlocked || isManuallyUnlocked;
+
+              // Timeline lock card is shown only if lock is enforced AND not yet revealed
+              const isTimeLocked = isLockEnforced && !isActivityRevealed;
+
+              // Secret surprise masking is active only if lock is enforced AND not yet revealed
+              const isHiddenSurprise = act.isSecretSurprise && isLockEnforced && !isActivityRevealed;
 
               if (isTimeLocked) {
                 // RENDER LOCKED MYSTERY CARD FOR GIRLFRIEND
@@ -626,10 +675,14 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                           <span>{act.time}</span>
                         </div>
 
-                        {/* Category Badge */}
-                        <div className={`flex items-center space-x-1 text-xs font-medium px-2.5 py-1 rounded-lg border ${badge.bg}`}>
-                          {badge.icon}
-                          <span>{badge.label}</span>
+                        {/* Category Badge - Do not leak real category if secret surprise */}
+                        <div className={`flex items-center space-x-1 text-xs font-medium px-2.5 py-1 rounded-lg border ${
+                          act.isSecretSurprise
+                            ? 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border-[var(--romantic-border,#BAE6FD)]'
+                            : badge.bg
+                        }`}>
+                          {act.isSecretSurprise ? <Gift className="w-3.5 h-3.5" /> : badge.icon}
+                          <span>{act.isSecretSurprise ? '🎁 秘密驚喜行程' : badge.label}</span>
                         </div>
 
                         {/* Lock status pill */}
@@ -643,14 +696,36 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                       <div className="p-4 rounded-2xl bg-white border border-[var(--romantic-border,#BAE6FD)] shadow-2xs">
                         <div className="flex items-center space-x-2 text-[var(--romantic-rose,#0284C7)] font-bold text-base font-serif">
                           <Sparkles className="w-4 h-4 text-[var(--romantic-gold,#F59E0B)] animate-spin" />
-                          <span>🔒 晴寶專屬神秘行程 · 驚喜封存中</span>
+                          <span>{act.isSecretSurprise ? '🎁 晴寶專屬神秘驚喜 · 浪漫封存中' : '🔒 晴寶專屬神秘行程 · 驚喜封存中'}</span>
                         </div>
                         <p className="text-xs text-[var(--romantic-muted,#64748B)] mt-1.5 leading-relaxed">
-                          「🤫 蔡寶用心策劃的驚喜時光！請好好享受現在，此項目將在 <strong>{lockStatus.formattedUnlockTime}</strong> (活動開始前 1 小時) 自動揭曉內容與地點喔 ✨」
+                          {act.isSecretSurprise && act.surpriseHint ? (
+                            <span>「🤫 蔡寶用心策劃的驚喜時光！線索提示：<strong>{act.surpriseHint}</strong>。此項目將在 <strong>{lockStatus.formattedUnlockTime}</strong> (活動開始前 1 小時) 自動揭曉內容與地點喔 ✨」</span>
+                          ) : (
+                            <span>「🤫 蔡寶用心策劃的驚喜時光！請好好享受現在，此項目將在 <strong>{lockStatus.formattedUnlockTime}</strong> (活動開始前 1 小時) 自動揭曉內容與地點喔 ✨」</span>
+                          )}
                         </p>
-                        <div className="mt-2.5 flex items-center space-x-2 text-[11px] text-[var(--romantic-gold,#F59E0B)] bg-[var(--romantic-gold-light,#FEF3C7)] px-2.5 py-1 rounded-lg border border-[var(--romantic-border,#BAE6FD)] inline-flex">
-                          <Hourglass className="w-3 h-3 text-[var(--romantic-gold,#F59E0B)]" />
-                          <span>倒數約 {lockStatus.minutesUntilUnlock} 分鐘後解鎖揭曉</span>
+                        <div className="mt-2.5 flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center space-x-2 text-[11px] text-[var(--romantic-gold,#F59E0B)] bg-[var(--romantic-gold-light,#FEF3C7)] px-2.5 py-1 rounded-lg border border-[var(--romantic-border,#BAE6FD)] inline-flex">
+                            <Hourglass className="w-3 h-3 text-[var(--romantic-gold,#F59E0B)]" />
+                            <span>倒數約 {lockStatus.minutesUntilUnlock} 分鐘後解鎖揭曉</span>
+                          </div>
+
+                          {act.isSecretSurprise && (
+                            <button
+                              onClick={() => {
+                                setPasswordUnlockModalAct(act);
+                                setUnlockError('');
+                                setUnlockSuccess('');
+                                setUnlockPasswordInput('');
+                              }}
+                              className="inline-flex items-center space-x-1.5 text-xs text-[var(--romantic-rose,#0284C7)] hover:text-white bg-[var(--romantic-rose-light,#F0F9FF)] hover:bg-[var(--romantic-rose,#0284C7)] px-3 py-1 rounded-xl border border-[var(--romantic-border,#BAE6FD)] font-semibold transition-all cursor-pointer shadow-2xs"
+                              title="如果已經到現場，可輸入密碼提前揭曉"
+                            >
+                              <Key className="w-3.5 h-3.5" />
+                              <span>提前揭曉密語</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -686,9 +761,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
                         {/* Secret Surprise Badge */}
                         {act.isSecretSurprise && (
-                          <span className="inline-flex items-center space-x-1 text-xs font-medium px-2.5 py-1 rounded-lg bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)]">
-                            <Gift className="w-3 h-3 text-[var(--romantic-rose,#0284C7)]" />
-                            <span>{isBoyfriend ? '🎁 驚喜模式（女友端遮蔽）' : '🎁 神秘驚喜'}</span>
+                          <span className="inline-flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                            <span>{isBoyfriend ? '🎁 驚喜行程（已到時公開）' : '✨ 浪漫驚喜 · 時間已到正式揭曉！'}</span>
                           </span>
                         )}
                       </div>
@@ -1228,6 +1303,100 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 <span>確認刪除行程</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Unlock Modal for Secret Surprise Activities */}
+      {passwordUnlockModalAct && (
+        <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-[var(--romantic-border,#BAE6FD)] animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--romantic-border,#BAE6FD)]">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] flex items-center justify-center border border-[var(--romantic-border,#BAE6FD)] shadow-2xs">
+                  <Gift className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-base font-bold text-[var(--romantic-ink,#0F172A)]">
+                    提前揭曉神秘驚喜行程
+                  </h3>
+                  <p className="text-xs text-[var(--romantic-muted,#64748B)]">
+                    抵達現場或想搶先看？輸入通關密語即可揭開！
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPasswordUnlockModalAct(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordUnlock} className="mt-5 space-y-4">
+              <div className="p-3.5 rounded-2xl bg-[var(--romantic-rose-light,#F0F9FF)] border border-[var(--romantic-border,#BAE6FD)]">
+                <div className="text-xs font-bold text-[var(--romantic-ink,#0F172A)] mb-1 flex items-center space-x-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
+                  <span>預定時段：{passwordUnlockModalAct.time}</span>
+                </div>
+                {passwordUnlockModalAct.surpriseHint && (
+                  <p className="text-xs text-[var(--romantic-rose,#0284C7)] italic leading-relaxed mt-1">
+                    「{passwordUnlockModalAct.surpriseHint}」
+                  </p>
+                )}
+                <p className="text-[11px] text-[var(--romantic-muted,#64748B)] mt-2">
+                  💡 提示：到達該行程時間也會全自動揭曉喔！
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1.5">
+                  通關密語 (Password)
+                </label>
+                <input
+                  type="password"
+                  value={unlockPasswordInput}
+                  onChange={(e) => {
+                    setUnlockPasswordInput(e.target.value);
+                    setUnlockError('');
+                  }}
+                  placeholder="輸入 4 位密碼 (例: 0520 或 1017)"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] text-sm tracking-widest font-mono text-center focus:outline-none focus:ring-2 focus:ring-[var(--romantic-rose,#0284C7)]"
+                  autoFocus
+                />
+              </div>
+
+              {unlockError && (
+                <p className="text-xs text-rose-500 font-medium text-center">
+                  {unlockError}
+                </p>
+              )}
+
+              {unlockSuccess && (
+                <div className="flex items-center justify-center space-x-2 text-xs text-emerald-600 font-bold bg-emerald-50 py-2.5 rounded-xl border border-emerald-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>{unlockSuccess}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPasswordUnlockModalAct(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-[var(--romantic-muted,#64748B)] hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  稍後再看
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold btn-romantic-primary text-white shadow-md transition-all cursor-pointer flex items-center space-x-1.5"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>立即解鎖揭曉</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1030,6 +1030,7 @@ export default function App() {
                 onUpdateItinerary={handleUpdateItinerary}
                 secretModePassword={tripData.settings.secretModePassword}
                 onSyncSecretSurprise={handleSyncSecretSurprise}
+                surprises={tripData.surprises}
               />
             </div>
           )}
