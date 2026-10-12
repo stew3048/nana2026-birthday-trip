@@ -13,11 +13,15 @@ interface AuthContextType {
   isBoyfriend: boolean;
   isGirlfriend: boolean;
   isActualBoyfriend: boolean;
+  isActualGirlfriend: boolean;
   isAuthorizedEditor: boolean;
+  isUnauthorized: boolean;
+  canToggleRole: boolean;
   defaultBoyfriendEmail: string;
   defaultGirlfriendEmail: string;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  switchAccount: () => Promise<void>;
   setRole: (role: UserRole) => void;
   // Simulated Time Engine for previewing time-locked itinerary
   simulatedTime: string | null; // ISO string or null for real-time
@@ -36,8 +40,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const BOYFRIEND_DEFAULT_EMAIL = 'stew3048@gmail.com';
-const GIRLFRIEND_DEFAULT_EMAIL = 'sng828388@gmail.com';
+export const BOYFRIEND_DEFAULT_EMAIL = 'stew3048@gmail.com';
+export const GIRLFRIEND_DEFAULT_EMAIL = 'sng828388@gmail.com';
 
 export const AuthProvider: React.FC<{
   children: React.ReactNode;
@@ -70,8 +74,8 @@ export const AuthProvider: React.FC<{
 
   // Helper to get active configured boyfriend and girlfriend emails
   const getTargetEmails = () => {
-    let bf = defaultBoyfriendEmail;
-    let gf = defaultGirlfriendEmail;
+    let bf = defaultBoyfriendEmail || BOYFRIEND_DEFAULT_EMAIL;
+    let gf = defaultGirlfriendEmail || GIRLFRIEND_DEFAULT_EMAIL;
     try {
       const tripSaved = localStorage.getItem('my_girlfriend_birthday_trip_tainan_v2');
       if (tripSaved) {
@@ -82,7 +86,10 @@ export const AuthProvider: React.FC<{
     } catch (e) {
       // ignore
     }
-    return { bfEmail: bf.toLowerCase(), gfEmail: gf.toLowerCase() };
+    return { 
+      bfEmail: bf.trim().toLowerCase(), 
+      gfEmail: gf.trim().toLowerCase() 
+    };
   };
 
   // Listen to Firebase Auth
@@ -92,17 +99,21 @@ export const AuthProvider: React.FC<{
       if (currentUser?.email) {
         const email = currentUser.email;
         setUserEmail(email);
-        const emailLower = email.toLowerCase();
+        const emailLower = email.trim().toLowerCase();
         const { bfEmail, gfEmail } = getTargetEmails();
         
-        if (emailLower === bfEmail || emailLower === 'stew3048@gmail.com' || emailLower.includes('stew') || emailLower.includes('cai')) {
-          setRoleState('boyfriend');
-          localStorage.setItem('qingbao_trip_user_role', 'boyfriend');
-        } else if (emailLower === gfEmail || emailLower === 'sng828388@gmail.com') {
+        // Strict equality check ONLY: no loose substring matching
+        if (emailLower === bfEmail || emailLower === BOYFRIEND_DEFAULT_EMAIL) {
+          // Actual boyfriend (stew3048@gmail.com)
+          const savedRole = localStorage.getItem('qingbao_trip_user_role');
+          const activeRole: UserRole = savedRole === 'girlfriend' ? 'girlfriend' : 'boyfriend';
+          setRoleState(activeRole);
+        } else if (emailLower === gfEmail || emailLower === GIRLFRIEND_DEFAULT_EMAIL) {
+          // Actual girlfriend (sng828388@gmail.com): strictly girlfriend only!
           setRoleState('girlfriend');
           localStorage.setItem('qingbao_trip_user_role', 'girlfriend');
         } else {
-          // Logged in with an un-whitelisted email
+          // Unauthorized email logged in: strictly guest, access denied!
           setRoleState('guest');
           localStorage.setItem('qingbao_trip_user_role', 'guest');
         }
@@ -115,7 +126,31 @@ export const AuthProvider: React.FC<{
     return () => unsubscribe();
   }, [defaultBoyfriendEmail, defaultGirlfriendEmail]);
 
+  const { bfEmail, gfEmail } = getTargetEmails();
+  const lowerUserEmail = userEmail?.trim().toLowerCase() || '';
+
+  const isLoggedIn = !!user;
+  // Strict check: only exact email matches are authorized
+  const isActualBoyfriend = isLoggedIn && (lowerUserEmail === bfEmail || lowerUserEmail === BOYFRIEND_DEFAULT_EMAIL);
+  const isActualGirlfriend = isLoggedIn && (lowerUserEmail === gfEmail || lowerUserEmail === GIRLFRIEND_DEFAULT_EMAIL);
+  const isAuthorizedEditor = isActualBoyfriend || isActualGirlfriend;
+  const isUnauthorized = isLoggedIn && !isAuthorizedEditor;
+
+  // Role permissions:
+  // - stew3048@gmail.com: can see both boyfriend and girlfriend perspectives
+  // - sng828388@gmail.com: can ONLY see girlfriend perspective, cannot switch
+  // - unauthorized / guest: neither
+  const isBoyfriend = isActualBoyfriend && role === 'boyfriend';
+  const isGirlfriend = isActualGirlfriend || (isActualBoyfriend && role === 'girlfriend');
+  const isGuest = !isLoggedIn || isUnauthorized;
+  const canToggleRole = isActualBoyfriend;
+
   const setRole = (newRole: UserRole) => {
+    // Only stew3048@gmail.com (actual boyfriend / administrator) has permission to switch perspectives!
+    if (!isActualBoyfriend) {
+      console.warn('Role switch rejected: only stew3048@gmail.com is allowed to toggle perspectives.');
+      return;
+    }
     setRoleState(newRole);
     localStorage.setItem('qingbao_trip_user_role', newRole);
   };
@@ -135,6 +170,20 @@ export const AuthProvider: React.FC<{
       if (loggedUser?.email) {
         setUser(loggedUser);
         setUserEmail(loggedUser.email);
+        const emailLower = loggedUser.email.trim().toLowerCase();
+        const { bfEmail, gfEmail } = getTargetEmails();
+
+        if (emailLower === bfEmail || emailLower === BOYFRIEND_DEFAULT_EMAIL) {
+          const savedRole = localStorage.getItem('qingbao_trip_user_role');
+          const activeRole: UserRole = savedRole === 'girlfriend' ? 'girlfriend' : 'boyfriend';
+          setRoleState(activeRole);
+        } else if (emailLower === gfEmail || emailLower === GIRLFRIEND_DEFAULT_EMAIL) {
+          setRoleState('girlfriend');
+          localStorage.setItem('qingbao_trip_user_role', 'girlfriend');
+        } else {
+          setRoleState('guest');
+          localStorage.setItem('qingbao_trip_user_role', 'guest');
+        }
       }
     } catch (err) {
       console.error('Login failed', err);
@@ -151,6 +200,20 @@ export const AuthProvider: React.FC<{
       localStorage.setItem('qingbao_trip_user_role', 'guest');
     } catch (err) {
       console.error('Logout failed', err);
+    }
+  };
+
+  const handleSwitchAccount = async () => {
+    try {
+      await logoutUser();
+      setUser(null);
+      setUserEmail(null);
+      setRoleState('guest');
+      localStorage.setItem('qingbao_trip_user_role', 'guest');
+      // Prompt Google account selection
+      await handleLogin();
+    } catch (err) {
+      console.error('Switch account failed', err);
     }
   };
 
@@ -173,19 +236,6 @@ export const AuthProvider: React.FC<{
 
   const effectiveTime = simulatedTime ? new Date(simulatedTime) : currentRealTime;
 
-  const { bfEmail, gfEmail } = getTargetEmails();
-  const lowerUserEmail = userEmail?.toLowerCase() || '';
-
-  const isLoggedIn = !!user;
-  const isActualBoyfriend = isLoggedIn && (lowerUserEmail === bfEmail || lowerUserEmail === 'stew3048@gmail.com' || lowerUserEmail.includes('stew'));
-  const isActualGirlfriend = isLoggedIn && (lowerUserEmail === gfEmail || lowerUserEmail === 'sng828388@gmail.com');
-  
-  // If boyfriend toggles to girlfriend view, isBoyfriend becomes false so UI reflects exactly what girlfriend sees!
-  const isBoyfriend = isActualBoyfriend ? role === 'boyfriend' : (role === 'boyfriend' || (role !== 'girlfriend' && !isActualGirlfriend));
-  const isGirlfriend = isActualGirlfriend || (isActualBoyfriend && role === 'girlfriend') || (!isLoggedIn && role === 'girlfriend');
-  const isGuest = !isLoggedIn && role !== 'boyfriend' && role !== 'girlfriend';
-  const isAuthorizedEditor = isActualBoyfriend || isActualGirlfriend;
-
   // Gatekeeper helper
   const requireAuthOrPrompt = (actionReason?: string): boolean => {
     if (isAuthorizedEditor) {
@@ -206,11 +256,15 @@ export const AuthProvider: React.FC<{
         isBoyfriend,
         isGirlfriend,
         isActualBoyfriend,
+        isActualGirlfriend,
         isAuthorizedEditor,
+        isUnauthorized,
+        canToggleRole,
         defaultBoyfriendEmail,
         defaultGirlfriendEmail,
         login: handleLogin,
         logout: handleLogout,
+        switchAccount: handleSwitchAccount,
         setRole,
         simulatedTime,
         effectiveTime,

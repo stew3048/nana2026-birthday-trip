@@ -53,6 +53,8 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
     isBoyfriend, 
     isGirlfriend, 
     isActualBoyfriend,
+    isActualGirlfriend,
+    canToggleRole,
     login, 
     logout, 
     setRole, 
@@ -105,12 +107,12 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
           {isBoyfriend ? (
             <div className="flex items-center space-x-1.5 bg-[var(--romantic-gold-light,#FEF3C7)] text-[var(--romantic-gold,#F59E0B)] px-2.5 py-1.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] font-bold shadow-xs whitespace-nowrap text-[11px] sm:text-xs shrink-0">
               <ShieldCheck className="w-3.5 h-3.5 text-[var(--romantic-gold,#F59E0B)] shrink-0" />
-              <span>👑 {boyfriendName}（管理員）</span>
+              <span>👑 {boyfriendName}（管理員視角）</span>
             </div>
           ) : isGirlfriend ? (
             <div className="flex items-center space-x-1.5 bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose-deep,#0369A1)] px-2.5 py-1.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] font-bold shadow-xs whitespace-nowrap text-[11px] sm:text-xs shrink-0">
               <Star className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)] fill-[var(--romantic-rose,#0284C7)] shrink-0" />
-              <span>⭐ {girlfriendName}（壽星視角）</span>
+              <span>⭐ {girlfriendName}（{isActualGirlfriend ? '壽星專屬視角' : '壽星體驗視角'}）</span>
             </div>
           ) : (
             <div className="flex items-center space-x-1.5 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] text-[var(--romantic-muted,#64748B)] whitespace-nowrap text-[11px] sm:text-xs shrink-0">
@@ -119,17 +121,19 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
             </div>
           )}
 
-          {/* Quick Toggle Role Button (For Actual Boyfriend / Admin or Tester) */}
-          <button
-            onClick={() => setRole(role === 'boyfriend' ? 'girlfriend' : 'boyfriend')}
-            className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-ink,#0F172A)] border border-[var(--romantic-border,#BAE6FD)] hover:border-[var(--romantic-rose,#0284C7)] transition-all cursor-pointer flex items-center space-x-1.5 shadow-xs whitespace-nowrap text-[11px] sm:text-xs shrink-0"
-            title="一鍵切換視角：切換至晴寶視角以體驗「活動前 1 小時自動解鎖」的神秘感與彈窗"
-          >
-            <Sliders className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)] shrink-0" />
-            <span className="font-medium">
-              {role === 'boyfriend' ? `換為 ⭐ ${girlfriendName} 視角` : `換為 👑 ${boyfriendName} 視角`}
-            </span>
-          </button>
+          {/* Quick Toggle Role Button: STRICTLY for actual boyfriend (stew3048@gmail.com) only */}
+          {canToggleRole && (
+            <button
+              onClick={() => setRole(role === 'boyfriend' ? 'girlfriend' : 'boyfriend')}
+              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-ink,#0F172A)] border border-[var(--romantic-border,#BAE6FD)] hover:border-[var(--romantic-rose,#0284C7)] transition-all cursor-pointer flex items-center space-x-1.5 shadow-xs whitespace-nowrap text-[11px] sm:text-xs shrink-0"
+              title="一鍵切換視角：管理員可切換至晴寶視角以體驗「活動前 1 小時自動解鎖」的神秘感與彈窗"
+            >
+              <Sliders className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)] shrink-0" />
+              <span className="font-medium">
+                {role === 'boyfriend' ? `換為 ⭐ ${girlfriendName} 視角` : `換為 👑 ${boyfriendName} 視角`}
+              </span>
+            </button>
+          )}
 
           {/* Quick Theme Switcher Pill in Top Bar */}
           <div className="relative">
