@@ -70,8 +70,11 @@ export async function syncTripToCloud(data: BirthdayTripData): Promise<boolean> 
     }
 
     const docRef = doc(db, 'trips', 'qingbao_tainan_2026');
+    // Ensure data is completely free of undefined values (which crash Firestore)
+    const sanitizedData = JSON.parse(JSON.stringify(data));
+    
     await setDoc(docRef, {
-      ...data,
+      ...sanitizedData,
       cloudSyncedAt: new Date().toISOString(),
       lastUpdatedBy: currentEmail
     }, { merge: true });

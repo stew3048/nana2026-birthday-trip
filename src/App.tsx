@@ -21,6 +21,7 @@ import { FirebaseDataInspectorModal } from './components/FirebaseDataInspectorMo
 import { GuestGatekeeper } from './components/GuestGatekeeper';
 import { ThemeStudioView } from './components/ThemeStudioView';
 import { useAuth } from './context/AuthContext';
+import { subscribeToPhotos } from './lib/firebase';
 import { BirthdayTripData, ActivityItem, SurpriseItem, DayHighlightCard } from './types';
 import { loadTripData, saveTripData, syncTripToCloud, subscribeToTripFromCloud, fetchTripFromCloud } from './utils/storage';
 import { TIME_SIMULATOR_PRESETS, TimePreset, sortSurprisesByStartTime, sortScenariosByStartTime, extractScenarioDateTimeComponents, extractTimestampFromTiming } from './utils/timeLock';
@@ -355,8 +356,15 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = subscribeToTripFromCloud((cloudData) => {
       if (cloudData && cloudData.settings) {
-        setTripData(cloudData);
-        saveTripData(cloudData);
+        setTripData(prev => {
+          // Robust merge: never let an outdated trip doc snapshot wipe out actively synced photos!
+          const mergedPhotos = (prev.photos && prev.photos.length > (cloudData.photos?.length || 0))
+            ? prev.photos
+            : (cloudData.photos && cloudData.photos.length > 0 ? cloudData.photos : prev.photos);
+          const updated = { ...cloudData, photos: mergedPhotos };
+          saveTripData(updated);
+          return updated;
+        });
 
         // ONLY trigger alert modal for Girlfriend (Receiver), NOT for Boyfriend (Sender)
         // AND ONLY if the alert is recent (not a stale test alert from hours/days ago)
@@ -387,6 +395,20 @@ export default function App() {
     });
     return () => unsubscribe();
   }, [isBoyfriend, effectiveTime, simulatedTime, dismissedAlertIds]);
+
+  // 1b. Subscribe to Real-time Polaroid Photos Wall (Dedicated collection sync)
+  useEffect(() => {
+    const unsubscribe = subscribeToPhotos((cloudPhotos) => {
+      if (cloudPhotos && cloudPhotos.length > 0) {
+        setTripData(prev => {
+          const updated = { ...prev, photos: cloudPhotos };
+          saveTripData(updated);
+          return updated;
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Auto-seed to fresh Firestore database when authorized user is logged in
   useEffect(() => {
@@ -926,13 +948,18 @@ export default function App() {
     });
   };
 
-  const handleUpdatePhotos = (newPhotos: BirthdayTripData['photos']) => {
+  const handleUpdatePhotos = async (newPhotos: BirthdayTripData['photos']) => {
     setTripData(prev => {
       const updated = { ...prev, photos: newPhotos };
       saveTripData(updated);
-      syncTripToCloud(updated);
       return updated;
     });
+    try {
+      const fullUpdated = { ...tripData, photos: newPhotos };
+      await syncTripToCloud(fullUpdated);
+    } catch (e) {
+      console.warn('Sync trip with updated photos notice:', e);
+    }
   };
 
   const handleUpdateLoveLetter = (newLetter: BirthdayTripData['loveLetter']) => {

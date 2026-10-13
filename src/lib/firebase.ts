@@ -21,6 +21,7 @@ import {
   User
 } from 'firebase/auth';
 import firebaseConfigData from '../../firebase-applet-config.json';
+import { PhotoMemory } from '../types';
 
 const firebaseConfig = {
   apiKey: firebaseConfigData.apiKey,
@@ -346,3 +347,121 @@ export async function deleteSnackItem(snackId: string) {
     return false;
   }
 }
+
+// ==========================================
+// Polaroid Photo Wall Real-time Synchronization
+// ==========================================
+export const PHOTOS_COLLECTION = 'tainan_birthday_photos';
+
+export const DEFAULT_TAINAN_PHOTOS: PhotoMemory[] = [
+  {
+    id: 'photo-1',
+    title: '10/17 祝我最愛的晴寶 生日快樂 🎂',
+    date: '2026.10.17',
+    caption: '看著妳笑得眼睛瞇瞇的樣子，就是蔡寶心裡全世界最美的風景。',
+    imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+    location: '台南煙波大飯店',
+    tag: '生日快樂'
+  },
+  {
+    id: 'photo-2',
+    title: '手牽手漫步奇美博物館與府城巷弄',
+    date: '2026.10.18',
+    caption: '牽著妳的手走過府城街道，吃遍所有美味小吃，有妳在的每一刻都好甜。',
+    imageUrl: 'https://images.unsplash.com/photo-1513279922550-250c2129b13a?auto=format&fit=crop&w=800&q=80',
+    location: '奇美博物館',
+    tag: '甜蜜足跡'
+  },
+  {
+    id: 'photo-3',
+    title: '煙波大飯店 隱糧義法餐酒館 浪漫微醺',
+    date: '2026.10.16',
+    caption: '抵達台南的第一晚，在煙波舒適入住，牽著晴寶的手享受悠閒愜意。',
+    imageUrl: 'https://images.unsplash.com/photo-1544077960-604201fe74bc?auto=format&fit=crop&w=800&q=80',
+    location: '煙波大飯店 台南館',
+    tag: '質感住宿'
+  }
+];
+
+// Subscribe to Photos from Firestore in Real-Time
+export function subscribeToPhotos(
+  onSuccess: (photos: PhotoMemory[]) => void,
+  onError?: (err: Error) => void
+) {
+  try {
+    const colRef = collection(db, PHOTOS_COLLECTION);
+    const unsub = onSnapshot(
+      colRef,
+      (snapshot) => {
+        if (snapshot.empty) {
+          // Initialize with default list if empty
+          initializeDefaultPhotos();
+          onSuccess(DEFAULT_TAINAN_PHOTOS);
+        } else {
+          const list: PhotoMemory[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push({ id: docSnap.id, ...docSnap.data() } as PhotoMemory);
+          });
+          // Sort stably: newest photos first, followed by default presets
+          list.sort((a: any, b: any) => {
+            const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.id.startsWith('photo-') ? parseInt(a.id.replace('photo-', ''), 10) || 0 : 0);
+            const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.id.startsWith('photo-') ? parseInt(b.id.replace('photo-', ''), 10) || 0 : 0);
+            if (timeA !== timeB) return timeB - timeA;
+            return a.id.localeCompare(b.id);
+          });
+          onSuccess(list);
+        }
+      },
+      (err) => {
+        console.warn('Firestore photos snapshot listener notice:', err);
+        if (onError) onError(err);
+      }
+    );
+    return unsub;
+  } catch (e: any) {
+    console.warn('Failed to subscribe to photos from Firestore:', e);
+    if (onError) onError(e);
+    return () => {};
+  }
+}
+
+// Initialize Default Photos to Firestore
+export async function initializeDefaultPhotos() {
+  try {
+    for (const item of DEFAULT_TAINAN_PHOTOS) {
+      const docRef = doc(db, PHOTOS_COLLECTION, item.id);
+      await setDoc(docRef, { ...item, updatedAt: new Date().toISOString() }, { merge: true });
+    }
+  } catch (e) {
+    console.warn('Notice initializing photos in Firestore:', e);
+  }
+}
+
+// Save or update photo in Firestore
+export async function savePhotoToFirestore(photo: PhotoMemory): Promise<boolean> {
+  try {
+    const docRef = doc(db, PHOTOS_COLLECTION, photo.id);
+    await setDoc(docRef, {
+      ...photo,
+      updatedAt: new Date().toISOString(),
+      updatedBy: auth.currentUser?.email || 'authorized_user'
+    }, { merge: true });
+    return true;
+  } catch (e) {
+    console.error('Failed to save photo to Firestore:', e);
+    throw e;
+  }
+}
+
+// Delete photo in Firestore
+export async function deletePhotoFromFirestore(photoId: string): Promise<boolean> {
+  try {
+    const docRef = doc(db, PHOTOS_COLLECTION, photoId);
+    await deleteDoc(docRef);
+    return true;
+  } catch (e) {
+    console.error('Failed to delete photo in Firestore:', e);
+    throw e;
+  }
+}
+

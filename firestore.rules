@@ -5,7 +5,9 @@ service cloud.firestore {
     function isAuthorizedUser() {
       return request.auth != null && 
         request.auth.token.email != null &&
-        (request.auth.token.email.lower() == 'stew3048@gmail.com' ||
+        (request.auth.token.email == 'stew3048@gmail.com' ||
+         request.auth.token.email == 'sng828388@gmail.com' ||
+         request.auth.token.email.lower() == 'stew3048@gmail.com' ||
          request.auth.token.email.lower() == 'sng828388@gmail.com');
     }
 
