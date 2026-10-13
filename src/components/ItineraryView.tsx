@@ -675,21 +675,26 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                           <span>{act.time}</span>
                         </div>
 
-                        {/* Category Badge - Do not leak real category if secret surprise */}
-                        <div className={`flex items-center space-x-1 text-xs font-medium px-2.5 py-1 rounded-lg border ${
-                          act.isSecretSurprise
-                            ? 'bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border-[var(--romantic-border,#BAE6FD)]'
-                            : badge.bg
-                        }`}>
-                          {act.isSecretSurprise ? <Gift className="w-3.5 h-3.5" /> : badge.icon}
-                          <span>{act.isSecretSurprise ? '🎁 秘密驚喜行程' : badge.label}</span>
-                        </div>
-
                         {/* Lock status pill */}
                         <span className="inline-flex items-center space-x-1 text-xs font-bold px-2.5 py-0.8 rounded-full bg-[var(--romantic-gold,#F59E0B)] text-white shadow-2xs">
                           <Lock className="w-3 h-3" />
                           <span>活動前 1 小時自動解鎖</span>
                         </span>
+
+                        {/* Secret surprise indicator (without leaking category) */}
+                        {act.isSecretSurprise && (
+                          <div className="flex items-center space-x-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] shadow-2xs">
+                            <Gift className="w-3.5 h-3.5" />
+                            <span>🎁 秘密驚喜</span>
+                          </div>
+                        )}
+
+                        {/* Boyfriend Only Admin Hint: Shows category to boyfriend only so he knows, but strictly hidden from girlfriend */}
+                        {isBoyfriend && (
+                          <div className="flex items-center space-x-1 text-[11px] font-medium px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200" title="此為蔡寶管理員專屬標籤提示，晴寶視角完全封存不顯示">
+                            <span>👑 原標籤：{badge.label}（晴寶端已隱藏）</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Mystery locked content */}

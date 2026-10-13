@@ -17,24 +17,24 @@ export const DEFAULT_DAY_HIGHLIGHTS: DayHighlightCard[] = [
     title: '奔向府城 · 煙波入住 ＆ 極致放鬆夜',
     description: '蔡寶請半天假南下，入住煙波大飯店、享用浪漫晚餐，三溫暖與深夜甜蜜放鬆互動。',
     tag1: '15:00 ~ 深夜',
-    tag2: '煙波大飯店 / 隱糧',
+    tag2: '煙波大飯店 質感入住',
     isSecretSurprise: false
   },
   {
     dayNumber: 2,
     dateBadge: '⭐ Day 2 · 10/17 (六) 晴寶生日',
-    title: '晴寶生日大日子 · 默契冒險 ＆ 神秘浪漫盛宴',
-    description: '整點慶生與專屬手寫信，下午特務默契通關，晚間精心預約神秘浪漫晚餐，為晴寶獻上最特別的生日祝福！',
+    title: '晴寶生日大日子 · 默契冒險 ＆ 神秘浪漫盛典',
+    description: '整點慶生與專屬手寫信，下午特務默契通關，晚間精心預約神秘浪漫驚喜，為晴寶獻上最特別的生日祝福！',
     tag1: '全天候專屬寵愛',
-    tag2: '神秘浪漫晚餐',
+    tag2: '專屬生日驚喜',
     isSecretSurprise: true
   },
   {
     dayNumber: 3,
     dateBadge: 'Day 3 · 10/18 (日)',
-    title: '早午餐悠閒漫遊 · 極上燒肉壓軸',
-    description: '睡到自然醒享用美味早午餐，安平悠閒逛街伴手禮，晚上炭火頂級燒肉為旅程完美收尾。',
-    tag1: '極上燒肉盛宴',
+    title: '早午餐悠閒漫遊 · 府城漫步與壓軸驚喜',
+    description: '睡到自然醒享用精緻早午餐，安平悠閒逛街伴手禮，為三天兩夜甜蜜旅程寫下最幸福句點。',
+    tag1: '悠閒府城散策',
     tag2: '帶著滿滿回憶歸賦',
     isSecretSurprise: false
   }
