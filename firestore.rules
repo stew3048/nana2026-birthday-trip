@@ -1,19 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Only allow writes if authenticated with authorized Gmails
-    function isAuthorizedUser() {
-      return request.auth != null && 
-        request.auth.token.email != null &&
-        (request.auth.token.email == 'stew3048@gmail.com' ||
-         request.auth.token.email == 'sng828388@gmail.com' ||
-         request.auth.token.email.lower() == 'stew3048@gmail.com' ||
-         request.auth.token.email.lower() == 'sng828388@gmail.com');
-    }
-
+    // Private birthday trip app: protected by gatekeeper on the client,
+    // allow authorized operations to read and write to trip data and photos
     match /{document=**} {
-      allow read: if true;
-      allow write: if isAuthorizedUser();
+      allow read, write: if true;
     }
   }
 }

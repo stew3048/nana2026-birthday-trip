@@ -39,30 +39,6 @@
         z-index: -99999 !important;
       }
     </style>
-    <script>
-      (function() {
-        function purgeNetlify() {
-          try {
-            const targets = document.querySelectorAll(
-              '[data-netlify-drawer], #netlify-feedback-drawer, #netlify-badge, .netlify-badge, iframe[title*="Netlify" i], iframe[src*="netlify" i], div[class*="netlify-drawer" i], div[id*="netlify-drawer" i]'
-            );
-            targets.forEach(function(el) { el.remove(); });
-            document.querySelectorAll('a[href*="netlify.com"]').forEach(function(a) {
-              var parent = a.closest('div[style*="fixed"], div[style*="position: fixed"]') || a;
-              parent.remove();
-            });
-          } catch(e) {}
-        }
-        purgeNetlify();
-        if (window.MutationObserver) {
-          var obs = new MutationObserver(purgeNetlify);
-          window.addEventListener('DOMContentLoaded', function() {
-            obs.observe(document.body, { childList: true, subtree: true });
-            purgeNetlify();
-          });
-        }
-      })();
-    </script>
   </head>
   <body class="bg-[#FBF9F5] text-stone-850 antialiased font-serif selection:bg-[#EBDDCF] selection:text-[#4A3B32]">
     <div id="root"></div>
