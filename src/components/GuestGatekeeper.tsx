@@ -102,13 +102,9 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
       setPasscodeError('請輸入通關密碼');
       return;
     }
-    if (trimmed !== '1017') {
-      setPasscodeError('通關密碼錯誤，請重新確認後再試！');
-      return;
-    }
     const result = loginWithPasscode(selectedRole, trimmed);
     if (!result.success) {
-      setPasscodeError(result.error || '通關密碼錯誤');
+      setPasscodeError(result.error || '通關密碼錯誤，請重新確認後再試！');
     }
   };
 

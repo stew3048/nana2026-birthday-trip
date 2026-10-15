@@ -273,7 +273,7 @@ export const AuthProvider: React.FC<{
   };
 
   const quickUnlockBoyfriend = () => {
-    loginWithPasscode('boyfriend', '1017');
+    loginWithPasscode('boyfriend', '0907');
   };
 
   const loginWithPasscode = (targetRole: 'boyfriend' | 'girlfriend', pin: string): { success: boolean; error?: string } => {
@@ -281,9 +281,18 @@ export const AuthProvider: React.FC<{
     if (!trimmed) {
       return { success: false, error: '請輸入專屬通關密碼' };
     }
-    // Strictly only 1017
-    if (trimmed !== '1017') {
-      return { success: false, error: '通行密碼錯誤，請重新確認後再試！' };
+
+    // Role-specific passcodes:
+    // 蔡寶: 0907
+    // 晴寶: 1017
+    if (targetRole === 'boyfriend') {
+      if (trimmed !== '0907') {
+        return { success: false, error: '蔡寶專屬密碼錯誤，請重新確認後再試！' };
+      }
+    } else {
+      if (trimmed !== '1017') {
+        return { success: false, error: '晴寶專屬密碼錯誤，請重新確認後再試！' };
+      }
     }
 
     if (targetRole === 'boyfriend') {
