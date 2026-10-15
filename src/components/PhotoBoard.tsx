@@ -314,26 +314,16 @@ export const PhotoBoard: React.FC<PhotoBoardProps> = ({
               <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--romantic-ink,#0F172A)]">
                 {isAdding ? '📸 新增浪漫拍立得' : '✏️ 編輯拍立得相片'}
               </h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  type="submit"
-                  disabled={isSaving || isCompressing}
-                  className="px-3 py-1.5 rounded-xl btn-romantic-primary text-white text-[11px] font-semibold shadow-xs cursor-pointer flex items-center space-x-1 disabled:opacity-50 sm:hidden"
-                >
-                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  <span>{isSaving ? '儲存中' : '儲存'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAdding(false);
-                    setEditingPhoto(null);
-                  }}
-                  className="p-1.5 rounded-full text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-ink,#0F172A)] hover:bg-[var(--romantic-card-warm,#F8FAFC)] cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAdding(false);
+                  setEditingPhoto(null);
+                }}
+                className="p-1.5 rounded-full text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-ink,#0F172A)] hover:bg-[var(--romantic-card-warm,#F8FAFC)] cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {uploadError && (

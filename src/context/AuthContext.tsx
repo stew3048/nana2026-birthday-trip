@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth, loginWithGoogle, logoutUser } from '../lib/firebase';
+import { auth, loginWithGoogle, loginWithGoogleRedirect, checkRedirectResult, logoutUser } from '../lib/firebase';
 
 export type UserRole = 'boyfriend' | 'girlfriend' | 'guest';
 
@@ -20,6 +20,7 @@ interface AuthContextType {
   defaultBoyfriendEmail: string;
   defaultGirlfriendEmail: string;
   login: () => Promise<void>;
+  loginRedirect: () => Promise<void>;
   logout: () => Promise<void>;
   switchAccount: () => Promise<void>;
   setRole: (role: UserRole) => void;
@@ -245,6 +246,21 @@ export const AuthProvider: React.FC<{
     return false;
   };
 
+  const handleLoginRedirect = async () => {
+    try {
+      await loginWithGoogleRedirect();
+    } catch (err) {
+      console.error('Login redirect failed', err);
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    checkRedirectResult().catch(err => {
+      console.warn('Redirect check notice:', err);
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -263,6 +279,7 @@ export const AuthProvider: React.FC<{
         defaultBoyfriendEmail,
         defaultGirlfriendEmail,
         login: handleLogin,
+        loginRedirect: handleLoginRedirect,
         logout: handleLogout,
         switchAccount: handleSwitchAccount,
         setRole,

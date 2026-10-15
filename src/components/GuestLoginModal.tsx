@@ -22,8 +22,9 @@ export const GuestLoginModal: React.FC<GuestLoginModalProps> = ({
   onClose,
   actionReason
 }) => {
-  const { login } = useAuth();
+  const { login, loginRedirect } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -36,14 +37,31 @@ export const GuestLoginModal: React.FC<GuestLoginModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error('Login error:', err);
-      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('unauthorized-domain')) {
-        const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '您的 Netlify 網域';
+      const code = err?.code || '';
+      const msg = err?.message || '';
+      const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '您的 Netlify 網域';
+
+      if (code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
         setErrorMsg(`網域未授權 (${currentDomain})：請至 Firebase Console 將此網域加入「Authorized domains」即可正常登入！`);
+      } else if (code === 'auth/popup-closed-by-user' || msg.includes('popup-closed-by-user')) {
+        setErrorMsg(`登入視窗已關閉或被阻擋。若在 Netlify 上，請確認已將網域 (${currentDomain}) 加入 Firebase「已授權網域」，或點擊下方改用跳轉登入。`);
       } else {
-        setErrorMsg(err?.message || 'Google 登入失敗或已取消，請再試一次');
+        setErrorMsg(msg || 'Google 登入失敗或已取消，請再試一次');
       }
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const handleGoogleRedirect = async () => {
+    try {
+      setIsRedirecting(true);
+      setErrorMsg(null);
+      await loginRedirect();
+    } catch (err: any) {
+      console.error('Login redirect error:', err);
+      setErrorMsg(err?.message || '跳轉登入失敗');
+      setIsRedirecting(false);
     }
   };
 
@@ -110,26 +128,65 @@ export const GuestLoginModal: React.FC<GuestLoginModalProps> = ({
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-2.5 rounded-xl bg-[#FDF2F0] text-[#9E4738] text-xs border border-[#F5CEC7] flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMsg}</span>
+          <div className="mb-4 p-3.5 rounded-2xl bg-[#FDF2F0] text-[#9E4738] text-xs border border-[#F5CEC7] space-y-2">
+            <div className="flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[#DC2626] mt-0.5" />
+              <div className="leading-relaxed font-medium">{errorMsg}</div>
+            </div>
+            <button
+              type="button"
+              onClick={handleGoogleRedirect}
+              disabled={isRedirecting}
+              className="w-full py-2.5 px-3 rounded-xl bg-[#8B2E24] hover:bg-[#72231A] text-white font-bold text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs"
+            >
+              {isRedirecting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>正在跳轉至 Google...</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>立即改用「免彈窗全頁跳轉登入」</span>
+                </>
+              )}
+            </button>
           </div>
         )}
 
-        {/* Buttons */}
-        <div className="space-y-2">
+        {/* Action Buttons */}
+        <div className="space-y-2.5">
           <button
             onClick={handleGoogleLogin}
-            disabled={isLoggingIn}
-            className="w-full py-3 rounded-2xl btn-romantic-primary font-bold text-sm flex items-center justify-center space-x-2 cursor-pointer"
+            disabled={isLoggingIn || isRedirecting}
+            className="w-full py-3 rounded-2xl btn-romantic-primary font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
           >
             <LogIn className={`w-4 h-4 ${isLoggingIn ? 'animate-spin' : ''}`} />
-            <span>{isLoggingIn ? '登入驗證中...' : '使用 Google 帳號登入'}</span>
+            <span>{isLoggingIn ? '視窗登入驗證中...' : '使用 Google 帳號快速登入 (彈出視窗)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGoogleRedirect}
+            disabled={isLoggingIn || isRedirecting}
+            className="w-full py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-[var(--romantic-rose-deep,#0369A1)] font-bold text-xs border border-[var(--romantic-border,#BAE6FD)] transition-colors flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs"
+          >
+            {isRedirecting ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <span>全頁導向 Google 中...</span>
+              </>
+            ) : (
+              <>
+                <LogIn className="w-3.5 h-3.5" />
+                <span>📱 免彈窗跳轉登入（手機 / LINE / Safari / Netlify 推薦）</span>
+              </>
+            )}
           </button>
 
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-2xl bg-[#FAF7F2] hover:bg-[#F3EDE4] text-[#7A695E] font-medium text-xs border border-[#E8DFC8] transition-colors cursor-pointer"
+            className="w-full py-2 rounded-2xl bg-[#FAF7F2] hover:bg-[#F3EDE4] text-[#7A695E] font-medium text-xs border border-[#E8DFC8] transition-colors cursor-pointer"
           >
             繼續以訪客唯讀瀏覽
           </button>

@@ -63,6 +63,7 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
     setSimulatedTime,
     boyfriendForceUnlockAll,
     setBoyfriendForceUnlockAll,
+    openLoginModal,
   } = useAuth();
 
   const { theme, setTheme, themeConfig } = useTheme();
@@ -78,7 +79,9 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
     try {
       await login();
     } catch (e: any) {
-      alert('Google 登入失敗：' + (e.message || '請確認網路或登入權限'));
+      console.warn('Direct popup login interrupted, falling back to login options modal:', e);
+      // Open the friendly login modal offering Redirect login without alert popups
+      openLoginModal('登入視窗已關閉或被阻擋，請使用「免彈窗跳轉登入」');
     } finally {
       setIsLoggingIn(false);
     }
