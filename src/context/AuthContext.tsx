@@ -278,9 +278,12 @@ export const AuthProvider: React.FC<{
 
   const loginWithPasscode = (targetRole: 'boyfriend' | 'girlfriend', pin: string): { success: boolean; error?: string } => {
     const trimmed = pin.trim();
-    const validPins = ['1017', '20261017', '1016', '1018'];
-    if (!validPins.includes(trimmed)) {
-      return { success: false, error: '通行密碼錯誤（提示：晴寶生日四位數字 1017）' };
+    if (!trimmed) {
+      return { success: false, error: '請輸入專屬通關密碼' };
+    }
+    // Strictly only 1017
+    if (trimmed !== '1017') {
+      return { success: false, error: '通行密碼錯誤，請重新確認後再試！' };
     }
 
     if (targetRole === 'boyfriend') {

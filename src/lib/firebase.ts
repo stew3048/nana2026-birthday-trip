@@ -25,19 +25,9 @@ import {
 import firebaseConfigData from '../../firebase-applet-config.json';
 import { PhotoMemory } from '../types';
 
-const getResolvedAuthDomain = () => {
-  if (typeof window !== 'undefined' && window.location.hostname) {
-    const host = window.location.hostname;
-    if (host.endsWith('netlify.app')) {
-      return host;
-    }
-  }
-  return firebaseConfigData.authDomain;
-};
-
 const firebaseConfig = {
   apiKey: firebaseConfigData.apiKey,
-  authDomain: getResolvedAuthDomain(),
+  authDomain: firebaseConfigData.authDomain,
   projectId: firebaseConfigData.projectId,
   storageBucket: firebaseConfigData.storageBucket,
   messagingSenderId: firebaseConfigData.messagingSenderId,
@@ -56,9 +46,6 @@ export const db = customDbId ? getFirestore(app, customDbId) : getFirestore(app)
 // Initialize Firebase Auth
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
 
 export async function loginWithGoogle(): Promise<User | null> {
   try {
