@@ -256,7 +256,25 @@ export const AuthProvider: React.FC<{
   };
 
   useEffect(() => {
-    checkRedirectResult().catch(err => {
+    checkRedirectResult().then((redirectedUser) => {
+      if (redirectedUser?.email) {
+        setUser(redirectedUser);
+        setUserEmail(redirectedUser.email);
+        const emailLower = redirectedUser.email.trim().toLowerCase();
+        const { bfEmail, gfEmail } = getTargetEmails();
+        if (emailLower === bfEmail || emailLower === BOYFRIEND_DEFAULT_EMAIL) {
+          const savedRole = localStorage.getItem('qingbao_trip_user_role');
+          const activeRole: UserRole = savedRole === 'girlfriend' ? 'girlfriend' : 'boyfriend';
+          setRoleState(activeRole);
+        } else if (emailLower === gfEmail || emailLower === GIRLFRIEND_DEFAULT_EMAIL) {
+          setRoleState('girlfriend');
+          localStorage.setItem('qingbao_trip_user_role', 'girlfriend');
+        } else {
+          setRoleState('guest');
+          localStorage.setItem('qingbao_trip_user_role', 'guest');
+        }
+      }
+    }).catch(err => {
       console.warn('Redirect check notice:', err);
     });
   }, []);

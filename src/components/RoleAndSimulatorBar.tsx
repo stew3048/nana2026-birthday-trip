@@ -79,9 +79,11 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
     try {
       await login();
     } catch (e: any) {
-      console.warn('Direct popup login interrupted, falling back to login options modal:', e);
-      // Open the friendly login modal offering Redirect login without alert popups
-      openLoginModal('登入視窗已關閉或被阻擋，請使用「免彈窗跳轉登入」');
+      if (e?.code === 'auth/popup-closed-by-user') {
+        console.log('Login popup was closed by user');
+      } else {
+        openLoginModal('登入 Google 帳號以解鎖編輯權限');
+      }
     } finally {
       setIsLoggingIn(false);
     }

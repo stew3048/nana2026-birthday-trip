@@ -37,8 +37,7 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
   } = useAuth();
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  const [loginError, setLoginError] = useState<{ title: string; detail: string; isDomainOrPopupIssue: boolean } | null>(null);
+  const [loginError, setLoginError] = useState<{ title: string; detail: string; isDomainOrPopupIssue?: boolean } | null>(null);
 
   const boyfriendEmail = (tripData?.settings?.boyfriendEmail || defaultBoyfriendEmail || 'stew3048@gmail.com').trim().toLowerCase();
   const girlfriendEmail = (tripData?.settings?.girlfriendEmail || defaultGirlfriendEmail || 'sng828388@gmail.com').trim().toLowerCase();
@@ -57,29 +56,25 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
 
     if (code === 'auth/popup-closed-by-user' || msg.includes('popup-closed-by-user')) {
       return {
-        title: '登入視窗已關閉或被瀏覽器攔截',
-        detail: `若在 Netlify 部署的網頁上，最常見原因是 Netlify 網域「${hostname}」尚未加入 Firebase 控制台的「已授權網域」；或者是在手機 LINE/IG 內開啟時彈出視窗被阻擋。您可以點擊下方按鈕改用「全頁跳轉方式登入」，或至 Firebase 控制台授權此網域。`,
-        isDomainOrPopupIssue: true
+        title: '登入視窗已關閉',
+        detail: '登入流程已取消或視窗被關閉，請再次點擊登入按鈕即可。'
       };
     }
     if (code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
       return {
         title: `網域尚未授權 (${hostname})`,
-        detail: `請至 Firebase 控制台 > Authentication > Settings > Authorized domains，點擊「Add domain」並將「${hostname}」填入授權清單。`,
-        isDomainOrPopupIssue: true
+        detail: `請至 Firebase 控制台 > Authentication > Settings > Authorized domains，確認是否已將「${hostname}」加入授權清單（注意：不可加 https:// 與結尾斜線）。`
       };
     }
     if (code === 'auth/popup-blocked' || msg.includes('popup-blocked')) {
       return {
         title: '瀏覽器已阻擋彈出視窗',
-        detail: '請允許瀏覽器彈出式視窗，或直接點選下方「全頁跳轉方式登入」。',
-        isDomainOrPopupIssue: true
+        detail: '請允許瀏覽器顯示彈出式視窗後重試。'
       };
     }
     return {
-      title: 'Google 登入驗證未完成',
-      detail: msg || '請稍後再試，或使用下方「全頁跳轉方式登入」。',
-      isDomainOrPopupIssue: false
+      title: 'Google 登入未完成',
+      detail: msg || '請稍後再試。'
     };
   };
 
@@ -93,18 +88,6 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
       setLoginError(parseAuthError(err));
     } finally {
       setIsLoggingIn(false);
-    }
-  };
-
-  const handleGoogleLoginRedirect = async () => {
-    try {
-      setIsRedirecting(true);
-      setLoginError(null);
-      await loginRedirect();
-    } catch (err: any) {
-      console.error('Login redirect error:', err);
-      setLoginError(parseAuthError(err));
-      setIsRedirecting(false);
     }
   };
 
@@ -353,28 +336,6 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
             <p className="text-[#6B4036] leading-relaxed text-[11px]">
               {loginError.detail}
             </p>
-            {loginError.isDomainOrPopupIssue && (
-              <div className="pt-2 border-t border-[#F5CEC7] flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={handleGoogleLoginRedirect}
-                  disabled={isRedirecting}
-                  className="w-full py-2.5 px-3 rounded-xl bg-[#8B2E24] hover:bg-[#72231A] text-white font-semibold text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs"
-                >
-                  {isRedirecting ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>正在導向 Google...</span>
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="w-3.5 h-3.5" />
-                      <span>改用「網頁跳轉方式登入（免彈窗）」</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
           </div>
         )}
 
@@ -383,7 +344,7 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
           <button
             onClick={handleGoogleLogin}
             disabled={isLoggingIn}
-            className="w-full py-3.5 px-6 rounded-2xl btn-romantic-primary font-bold text-sm sm:text-base flex items-center justify-center space-x-3 cursor-pointer"
+            className="w-full py-3.5 px-6 rounded-2xl btn-romantic-primary font-bold text-sm sm:text-base flex items-center justify-center space-x-3 cursor-pointer shadow-md"
           >
             {isLoggingIn ? (
               <>
@@ -393,7 +354,7 @@ export const GuestGatekeeper: React.FC<GuestGatekeeperProps> = ({ tripData }) =>
             ) : (
               <>
                 {/* Google G SVG */}
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#FFFFFF"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
