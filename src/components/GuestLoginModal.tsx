@@ -22,7 +22,7 @@ export const GuestLoginModal: React.FC<GuestLoginModalProps> = ({
   onClose,
   actionReason
 }) => {
-  const { login } = useAuth();
+  const { login, quickUnlockBoyfriend, loginWithPasscode } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -127,11 +127,37 @@ export const GuestLoginModal: React.FC<GuestLoginModalProps> = ({
             <span>{isLoggingIn ? '登入驗證中...' : '使用 Google 帳號登入'}</span>
           </button>
 
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                quickUnlockBoyfriend();
+                onClose();
+              }}
+              className="py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 transition-colors flex items-center justify-center space-x-1 cursor-pointer shadow-xs"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-600" />
+              <span>👑 蔡寶快速登入</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                loginWithPasscode('girlfriend', '1017');
+                onClose();
+              }}
+              className="py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs border border-rose-200 transition-colors flex items-center justify-center space-x-1 cursor-pointer shadow-xs"
+            >
+              <Heart className="w-3.5 h-3.5 text-rose-600 fill-rose-600" />
+              <span>⭐ 晴寶快速登入</span>
+            </button>
+          </div>
+
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-2xl bg-[#FAF7F2] hover:bg-[#F3EDE4] text-[#7A695E] font-medium text-xs border border-[#E8DFC8] transition-colors cursor-pointer"
+            className="w-full py-2 rounded-2xl bg-[#FAF7F2] hover:bg-[#F3EDE4] text-[#7A695E] font-medium text-xs border border-[#E8DFC8] transition-colors cursor-pointer"
           >
-            繼續以訪客唯讀瀏覽
+            取消關閉
           </button>
         </div>
 

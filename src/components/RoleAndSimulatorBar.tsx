@@ -79,11 +79,8 @@ export const RoleAndSimulatorBar: React.FC<RoleAndSimulatorBarProps> = ({
     try {
       await login();
     } catch (e: any) {
-      if (e?.code === 'auth/popup-closed-by-user') {
-        console.log('Login popup was closed by user');
-      } else {
-        openLoginModal('登入 Google 帳號以解鎖編輯權限');
-      }
+      console.warn('Login error, opening login modal:', e);
+      openLoginModal('登入 Google 帳號以解鎖編輯權限');
     } finally {
       setIsLoggingIn(false);
     }

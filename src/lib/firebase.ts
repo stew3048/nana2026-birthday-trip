@@ -25,9 +25,19 @@ import {
 import firebaseConfigData from '../../firebase-applet-config.json';
 import { PhotoMemory } from '../types';
 
+const getResolvedAuthDomain = () => {
+  if (typeof window !== 'undefined' && window.location.hostname) {
+    const host = window.location.hostname;
+    if (host.endsWith('netlify.app')) {
+      return host;
+    }
+  }
+  return firebaseConfigData.authDomain;
+};
+
 const firebaseConfig = {
   apiKey: firebaseConfigData.apiKey,
-  authDomain: firebaseConfigData.authDomain,
+  authDomain: getResolvedAuthDomain(),
   projectId: firebaseConfigData.projectId,
   storageBucket: firebaseConfigData.storageBucket,
   messagingSenderId: firebaseConfigData.messagingSenderId,

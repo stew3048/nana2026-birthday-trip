@@ -37,6 +37,8 @@ interface AuthContextType {
   openLoginModal: (reason?: string) => void;
   closeLoginModal: () => void;
   requireAuthOrPrompt: (actionReason?: string) => boolean;
+  quickUnlockBoyfriend: () => void;
+  loginWithPasscode: (targetRole: 'boyfriend' | 'girlfriend', pin: string) => { success: boolean; error?: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,8 +55,33 @@ export const AuthProvider: React.FC<{
   defaultBoyfriendEmail = BOYFRIEND_DEFAULT_EMAIL,
   defaultGirlfriendEmail = GIRLFRIEND_DEFAULT_EMAIL,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const fastAuth = localStorage.getItem('qingbao_trip_fast_auth');
+      if (fastAuth === BOYFRIEND_DEFAULT_EMAIL) {
+        return {
+          email: BOYFRIEND_DEFAULT_EMAIL,
+          displayName: '蔡寶 (管理員)',
+          uid: 'boyfriend-admin-auth',
+        } as any;
+      } else if (fastAuth === GIRLFRIEND_DEFAULT_EMAIL) {
+        return {
+          email: GIRLFRIEND_DEFAULT_EMAIL,
+          displayName: '晴寶 (壽星女主角)',
+          uid: 'girlfriend-qingbao-auth',
+        } as any;
+      }
+    } catch (e) {}
+    return null;
+  });
+
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('qingbao_trip_fast_auth') || null;
+    } catch (e) {
+      return null;
+    }
+  });
   
   // Login Interception Modal State
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -96,8 +123,8 @@ export const AuthProvider: React.FC<{
   // Listen to Firebase Auth
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
       if (currentUser?.email) {
+        setUser(currentUser);
         const email = currentUser.email;
         setUserEmail(email);
         const emailLower = email.trim().toLowerCase();
@@ -109,19 +136,45 @@ export const AuthProvider: React.FC<{
           const savedRole = localStorage.getItem('qingbao_trip_user_role');
           const activeRole: UserRole = savedRole === 'girlfriend' ? 'girlfriend' : 'boyfriend';
           setRoleState(activeRole);
+          localStorage.setItem('qingbao_trip_fast_auth', BOYFRIEND_DEFAULT_EMAIL);
         } else if (emailLower === gfEmail || emailLower === GIRLFRIEND_DEFAULT_EMAIL) {
           // Actual girlfriend (sng828388@gmail.com): strictly girlfriend only!
           setRoleState('girlfriend');
           localStorage.setItem('qingbao_trip_user_role', 'girlfriend');
+          localStorage.setItem('qingbao_trip_fast_auth', GIRLFRIEND_DEFAULT_EMAIL);
         } else {
           // Unauthorized email logged in: strictly guest, access denied!
           setRoleState('guest');
           localStorage.setItem('qingbao_trip_user_role', 'guest');
+          localStorage.removeItem('qingbao_trip_fast_auth');
         }
       } else {
-        setUserEmail(null);
-        setRoleState('guest');
-        localStorage.setItem('qingbao_trip_user_role', 'guest');
+        // If Firebase currentUser is null, check if there is an active local passcode/fast auth session
+        const fastAuth = localStorage.getItem('qingbao_trip_fast_auth');
+        if (fastAuth === BOYFRIEND_DEFAULT_EMAIL) {
+          setUserEmail(BOYFRIEND_DEFAULT_EMAIL);
+          setUser({
+            email: BOYFRIEND_DEFAULT_EMAIL,
+            displayName: '蔡寶 (管理員)',
+            uid: 'boyfriend-admin-auth',
+          } as any);
+          const savedRole = localStorage.getItem('qingbao_trip_user_role');
+          setRoleState(savedRole === 'girlfriend' ? 'girlfriend' : 'boyfriend');
+        } else if (fastAuth === GIRLFRIEND_DEFAULT_EMAIL) {
+          setUserEmail(GIRLFRIEND_DEFAULT_EMAIL);
+          setUser({
+            email: GIRLFRIEND_DEFAULT_EMAIL,
+            displayName: '晴寶 (壽星女主角)',
+            uid: 'girlfriend-qingbao-auth',
+          } as any);
+          setRoleState('girlfriend');
+          localStorage.setItem('qingbao_trip_user_role', 'girlfriend');
+        } else {
+          setUser(null);
+          setUserEmail(null);
+          setRoleState('guest');
+          localStorage.setItem('qingbao_trip_user_role', 'guest');
+        }
       }
     });
     return () => unsubscribe();
@@ -194,6 +247,7 @@ export const AuthProvider: React.FC<{
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('qingbao_trip_fast_auth');
       await logoutUser();
       setUser(null);
       setUserEmail(null);
@@ -217,6 +271,70 @@ export const AuthProvider: React.FC<{
       console.error('Switch account failed', err);
     }
   };
+
+  const quickUnlockBoyfriend = () => {
+    loginWithPasscode('boyfriend', '1017');
+  };
+
+  const loginWithPasscode = (targetRole: 'boyfriend' | 'girlfriend', pin: string): { success: boolean; error?: string } => {
+    const trimmed = pin.trim();
+    const validPins = ['1017', '20261017', '1016', '1018'];
+    if (!validPins.includes(trimmed)) {
+      return { success: false, error: '通行密碼錯誤（提示：晴寶生日四位數字 1017）' };
+    }
+
+    if (targetRole === 'boyfriend') {
+      const email = BOYFRIEND_DEFAULT_EMAIL;
+      setUserEmail(email);
+      setUser({
+        email,
+        displayName: '蔡寶 (管理員)',
+        uid: 'boyfriend-admin-auth',
+      } as any);
+      setRoleState('boyfriend');
+      localStorage.setItem('qingbao_trip_user_role', 'boyfriend');
+      localStorage.setItem('qingbao_trip_fast_auth', email);
+      closeLoginModal();
+      return { success: true };
+    } else {
+      const email = GIRLFRIEND_DEFAULT_EMAIL;
+      setUserEmail(email);
+      setUser({
+        email,
+        displayName: '晴寶 (壽星女主角)',
+        uid: 'girlfriend-qingbao-auth',
+      } as any);
+      setRoleState('girlfriend');
+      localStorage.setItem('qingbao_trip_user_role', 'girlfriend');
+      localStorage.setItem('qingbao_trip_fast_auth', email);
+      closeLoginModal();
+      return { success: true };
+    }
+  };
+
+  useEffect(() => {
+    const fastAuth = localStorage.getItem('qingbao_trip_fast_auth');
+    if (fastAuth && !user) {
+      if (fastAuth === BOYFRIEND_DEFAULT_EMAIL) {
+        setUserEmail(BOYFRIEND_DEFAULT_EMAIL);
+        setUser({
+          email: BOYFRIEND_DEFAULT_EMAIL,
+          displayName: '蔡寶 (管理員)',
+          uid: 'boyfriend-admin-auth',
+        } as any);
+        const savedRole = localStorage.getItem('qingbao_trip_user_role');
+        setRoleState(savedRole === 'girlfriend' ? 'girlfriend' : 'boyfriend');
+      } else if (fastAuth === GIRLFRIEND_DEFAULT_EMAIL) {
+        setUserEmail(GIRLFRIEND_DEFAULT_EMAIL);
+        setUser({
+          email: GIRLFRIEND_DEFAULT_EMAIL,
+          displayName: '晴寶 (壽星女主角)',
+          uid: 'girlfriend-qingbao-auth',
+        } as any);
+        setRoleState('girlfriend');
+      }
+    }
+  }, []);
 
   const openLoginModal = (reason?: string) => {
     setLoginModalReason(reason);
@@ -310,7 +428,9 @@ export const AuthProvider: React.FC<{
         loginModalReason,
         openLoginModal,
         closeLoginModal,
-        requireAuthOrPrompt
+        requireAuthOrPrompt,
+        quickUnlockBoyfriend,
+        loginWithPasscode
       }}
     >
       {children}
