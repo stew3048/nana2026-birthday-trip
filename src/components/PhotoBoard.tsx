@@ -1,8 +1,27 @@
 import React, { useState } from 'react';
-import { Camera, Heart, Plus, Trash2, MapPin, Calendar, Sparkles, Upload, Edit3, X, Check, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Camera, Heart, Plus, Trash2, MapPin, Calendar, Sparkles, Upload, Edit3, X, Check, Loader2, Image as ImageIcon, Smile } from 'lucide-react';
 import { PhotoMemory } from '../types';
 import { compressImage } from '../utils/imageCompressor';
 import { savePhotoToFirestore, deletePhotoFromFirestore } from '../lib/firebase';
+
+export interface MoodOption {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
+  activeColor: string;
+}
+
+export const MOOD_OPTIONS: MoodOption[] = [
+  { id: 'happy', label: '開心', emoji: '😊', color: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100', activeColor: 'bg-amber-500 text-white border-amber-600 ring-2 ring-amber-300' },
+  { id: 'blessed', label: '幸福', emoji: '🥰', color: 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100', activeColor: 'bg-rose-500 text-white border-rose-600 ring-2 ring-rose-300' },
+  { id: 'angry', label: '生氣', emoji: '😤', color: 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100', activeColor: 'bg-red-500 text-white border-red-600 ring-2 ring-red-300' },
+  { id: 'hurried', label: '著急', emoji: '🏃‍♀️', color: 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100', activeColor: 'bg-orange-500 text-white border-orange-600 ring-2 ring-orange-300' },
+  { id: 'sad', label: '難過', emoji: '🥺', color: 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100', activeColor: 'bg-blue-500 text-white border-blue-600 ring-2 ring-blue-300' },
+  { id: 'nervous', label: '緊張', emoji: '💓', color: 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100', activeColor: 'bg-purple-500 text-white border-purple-600 ring-2 ring-purple-300' },
+  { id: 'foodie', label: '貪吃', emoji: '😋', color: 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100', activeColor: 'bg-emerald-500 text-white border-emerald-600 ring-2 ring-emerald-300' },
+  { id: 'surprise', label: '驚喜', emoji: '✨', color: 'bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100', activeColor: 'bg-yellow-500 text-white border-yellow-600 ring-2 ring-yellow-300' },
+];
 
 interface PhotoBoardProps {
   photos: PhotoMemory[];
@@ -20,6 +39,7 @@ export const PhotoBoard: React.FC<PhotoBoardProps> = ({
   const [isCompressing, setIsCompressing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedMoodFilter, setSelectedMoodFilter] = useState<string>('all');
 
   const [formData, setFormData] = useState<PhotoMemory>({
     id: '',
@@ -28,7 +48,7 @@ export const PhotoBoard: React.FC<PhotoBoardProps> = ({
     caption: '',
     imageUrl: '',
     location: '',
-    tag: '甜蜜日常'
+    tag: '🥰 幸福'
   });
 
   const datePresets = [
@@ -47,12 +67,18 @@ export const PhotoBoard: React.FC<PhotoBoardProps> = ({
       caption: '',
       imageUrl: '',
       location: '',
-      tag: '甜蜜日常'
+      tag: '🥰 幸福'
     });
     setUploadError(null);
     setIsAdding(true);
     setEditingPhoto(null);
   };
+
+  const filteredPhotos = (photos || []).filter(item => {
+    if (selectedMoodFilter === 'all') return true;
+    if (!item.tag) return false;
+    return item.tag.includes(selectedMoodFilter);
+  });
 
   const handleOpenEdit = (photo: PhotoMemory) => {
     setFormData({ ...photo });
@@ -216,92 +242,162 @@ export const PhotoBoard: React.FC<PhotoBoardProps> = ({
         </button>
       </div>
 
-      {/* Polaroid Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {photos.map((item, idx) => (
-          <div
-            key={item.id}
-            className="bg-[var(--romantic-card-warm,#F8FAFC)] rounded-3xl p-5 border border-[var(--romantic-border,#BAE6FD)] shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative group flex flex-col justify-between"
-            style={{
-              transform: idx % 2 === 0 ? 'rotate(-0.5deg)' : 'rotate(0.5deg)'
-            }}
-          >
-            <div>
-              {/* Photo Container styled like classic Polaroid */}
-              <div className="relative aspect-4/3 rounded-2xl overflow-hidden bg-slate-100 mb-4 shadow-inner border border-[var(--romantic-border,#BAE6FD)]">
-                <img
-                  src={item.imageUrl}
-                  alt={item.title}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+      {/* Mood Filter Bar */}
+      <div className="bg-white rounded-2xl p-3 border border-[var(--romantic-border,#BAE6FD)] shadow-xs flex items-center space-x-1.5 sm:space-x-2 overflow-x-auto no-scrollbar">
+        <span className="text-xs font-bold text-[var(--romantic-muted,#64748B)] shrink-0 mr-1 flex items-center space-x-1">
+          <Smile className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
+          <span>心情分類：</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => setSelectedMoodFilter('all')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+            selectedMoodFilter === 'all'
+              ? 'btn-romantic-primary text-white shadow-xs font-bold'
+              : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-[var(--romantic-border,#BAE6FD)]'
+          }`}
+        >
+          全部回憶 ({photos.length})
+        </button>
+        {MOOD_OPTIONS.map((mood) => {
+          const count = photos.filter(p => p.tag && (p.tag.includes(mood.label) || p.tag.includes(mood.emoji))).length;
+          return (
+            <button
+              key={mood.id}
+              type="button"
+              onClick={() => setSelectedMoodFilter(mood.label)}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center space-x-1 border ${
+                selectedMoodFilter === mood.label
+                  ? `${mood.activeColor} shadow-xs font-bold scale-102`
+                  : `${mood.color} border-[var(--romantic-border,#BAE6FD)]`
+              }`}
+            >
+              <span>{mood.emoji}</span>
+              <span>{mood.label}</span>
+              {count > 0 && <span className="opacity-80 text-[10px]">({count})</span>}
+            </button>
+          );
+        })}
+      </div>
 
-                {item.tag && (
-                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xs text-white text-[10px] font-medium border border-white/20">
-                    {item.tag}
+      {/* Polaroid Grid or Empty State */}
+      {filteredPhotos.length === 0 ? (
+        <div className="bg-white rounded-3xl p-10 border border-[var(--romantic-border,#BAE6FD)] text-center space-y-3">
+          <Smile className="w-10 h-10 mx-auto text-[var(--romantic-muted,#64748B)] opacity-50" />
+          <h4 className="font-serif text-base font-bold text-[var(--romantic-ink,#0F172A)]">
+            尚無「{selectedMoodFilter}」心情的拍立得照片
+          </h4>
+          <p className="text-xs text-[var(--romantic-muted,#64748B)]">
+            點擊上方「新增拍立得相片」，為這個心情留下專屬的浪漫回憶吧！
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              const matched = MOOD_OPTIONS.find(m => m.label === selectedMoodFilter);
+              setFormData({
+                id: '',
+                title: '',
+                date: '2026-10-16 (Day 1)',
+                caption: '',
+                imageUrl: '',
+                location: '',
+                tag: matched ? `${matched.emoji} ${matched.label}` : selectedMoodFilter
+              });
+              setIsAdding(true);
+            }}
+            className="px-4 py-2 rounded-xl btn-romantic-primary text-white text-xs font-semibold cursor-pointer shadow-xs inline-flex items-center space-x-1"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>立即新增「{selectedMoodFilter}」相片</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPhotos.map((item, idx) => (
+            <div
+              key={item.id}
+              className="bg-[var(--romantic-card-warm,#F8FAFC)] rounded-3xl p-5 border border-[var(--romantic-border,#BAE6FD)] shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative group flex flex-col justify-between"
+              style={{
+                transform: idx % 2 === 0 ? 'rotate(-0.5deg)' : 'rotate(0.5deg)'
+              }}
+            >
+              <div>
+                {/* Photo Container styled like classic Polaroid */}
+                <div className="relative aspect-4/3 rounded-2xl overflow-hidden bg-slate-100 mb-4 shadow-inner border border-[var(--romantic-border,#BAE6FD)]">
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+
+                  {item.tag && (
+                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-white text-[11px] font-semibold border border-white/20 shadow-md flex items-center space-x-1">
+                      <span>{item.tag}</span>
+                    </span>
+                  )}
+
+                  {/* Card Action Buttons (Edit & Delete) */}
+                  <div className="absolute top-3 right-3 flex items-center space-x-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(item);
+                      }}
+                      className="p-1.5 rounded-full bg-white/90 hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-ink,#0F172A)] hover:text-[var(--romantic-rose,#0284C7)] shadow-md cursor-pointer transition-colors"
+                      title="編輯這張相片"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingPhotoId(item.id);
+                      }}
+                      className="p-1.5 rounded-full bg-white/90 hover:bg-red-50 text-[var(--romantic-ink,#0F172A)] hover:text-red-500 shadow-md cursor-pointer transition-colors"
+                      title="刪除這張拍立得"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Caption & Metadata */}
+                <div className="space-y-1.5 px-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-serif text-lg font-bold text-[var(--romantic-ink,#0F172A)]">
+                      {item.title}
+                    </h3>
+                    <Heart className="w-4 h-4 text-[var(--romantic-rose,#0284C7)] fill-[var(--romantic-rose,#0284C7)] animate-pulse" />
+                  </div>
+
+                  {item.caption && (
+                    <p className="font-serif italic text-[var(--romantic-muted,#64748B)] text-xs sm:text-sm leading-relaxed">
+                      「{item.caption}」
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-[var(--romantic-muted,#64748B)] pt-3 mt-3 border-t border-[var(--romantic-border,#BAE6FD)] px-1">
+                <span className="flex items-center space-x-1 font-mono">
+                  <Calendar className="w-3 h-3 text-[var(--romantic-rose,#0284C7)]" />
+                  <span className="text-[var(--romantic-ink,#0F172A)] font-medium">{item.date}</span>
+                </span>
+                {item.location && (
+                  <span className="flex items-center space-x-1">
+                    <MapPin className="w-3 h-3 text-[var(--romantic-gold,#F59E0B)]" />
+                    <span className="text-[var(--romantic-ink,#0F172A)]">{item.location}</span>
                   </span>
                 )}
-
-                {/* Card Action Buttons (Edit & Delete) */}
-                <div className="absolute top-3 right-3 flex items-center space-x-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEdit(item);
-                    }}
-                    className="p-1.5 rounded-full bg-white/90 hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-ink,#0F172A)] hover:text-[var(--romantic-rose,#0284C7)] shadow-md cursor-pointer transition-colors"
-                    title="編輯這張相片"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeletingPhotoId(item.id);
-                    }}
-                    className="p-1.5 rounded-full bg-white/90 hover:bg-red-50 text-[var(--romantic-ink,#0F172A)] hover:text-red-500 shadow-md cursor-pointer transition-colors"
-                    title="刪除這張拍立得"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Caption & Metadata */}
-              <div className="space-y-1.5 px-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif text-lg font-bold text-[var(--romantic-ink,#0F172A)]">
-                    {item.title}
-                  </h3>
-                  <Heart className="w-4 h-4 text-[var(--romantic-rose,#0284C7)] fill-[var(--romantic-rose,#0284C7)] animate-pulse" />
-                </div>
-
-                {item.caption && (
-                  <p className="font-serif italic text-[var(--romantic-muted,#64748B)] text-xs sm:text-sm leading-relaxed">
-                    「{item.caption}」
-                  </p>
-                )}
               </div>
             </div>
-
-            <div className="flex items-center justify-between text-[11px] text-[var(--romantic-muted,#64748B)] pt-3 mt-3 border-t border-[var(--romantic-border,#BAE6FD)] px-1">
-              <span className="flex items-center space-x-1 font-mono">
-                <Calendar className="w-3 h-3 text-[var(--romantic-rose,#0284C7)]" />
-                <span className="text-[var(--romantic-ink,#0F172A)] font-medium">{item.date}</span>
-              </span>
-              {item.location && (
-                <span className="flex items-center space-x-1">
-                  <MapPin className="w-3 h-3 text-[var(--romantic-gold,#F59E0B)]" />
-                  <span className="text-[var(--romantic-ink,#0F172A)]">{item.location}</span>
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Add or Edit Photo Modal */}
       {(isAdding || editingPhoto) && (
@@ -448,30 +544,81 @@ export const PhotoBoard: React.FC<PhotoBoardProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
-                  地點
+            {/* Location */}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
+                拍攝地點
+              </label>
+              <input
+                type="text"
+                value={formData.location || ''}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="例如：煙波大飯店、奇美博物館、國華街"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
+              />
+            </div>
+
+            {/* Mood / Tag selection with Presets & Custom Input */}
+            <div className="bg-[var(--romantic-card-warm,#F8FAFC)] p-3.5 rounded-2xl border border-[var(--romantic-border,#BAE6FD)] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[var(--romantic-ink,#0F172A)] flex items-center space-x-1.5">
+                  <Smile className="w-4 h-4 text-[var(--romantic-rose,#0284C7)]" />
+                  <span>拍照心情 / 標籤分類 *</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.location || ''}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="例如：煙波大飯店、奇美博物館"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
-                />
+                <span className="text-[10px] text-[var(--romantic-rose,#0284C7)] font-medium">
+                  點選心情或自行手填
+                </span>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--romantic-ink,#0F172A)] mb-1">
-                  標籤分類
-                </label>
+
+              {/* Mood Option Chips */}
+              <div className="grid grid-cols-4 gap-1.5">
+                {MOOD_OPTIONS.map((mood) => {
+                  const isSelected = formData.tag === `${mood.emoji} ${mood.label}` || 
+                                     formData.tag === mood.label || 
+                                     (Boolean(formData.tag) && (formData.tag.includes(mood.label) || formData.tag.includes(mood.emoji)));
+
+                  return (
+                    <button
+                      key={mood.id}
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          tag: `${mood.emoji} ${mood.label}`
+                        }));
+                      }}
+                      className={`py-2 px-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                        isSelected
+                          ? `${mood.activeColor} shadow-xs scale-102 font-bold`
+                          : `${mood.color}`
+                      }`}
+                    >
+                      <span className="text-sm">{mood.emoji}</span>
+                      <span>{mood.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Manual Input field for custom typing */}
+              <div className="relative pt-1">
                 <input
                   type="text"
                   value={formData.tag || ''}
                   onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
-                  placeholder="例如：甜蜜回憶、法式大餐"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-sm font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)]"
+                  placeholder="可點選上方心情，或手填自訂標籤（如：感動大哭、手牽手散步）"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-white text-[var(--romantic-ink,#0F172A)] placeholder:text-[var(--romantic-muted,#64748B)]/60 text-xs font-medium focus:outline-none focus:border-[var(--romantic-rose,#0284C7)] focus:ring-1 focus:ring-[var(--romantic-rose,#0284C7)] pr-8"
                 />
+                {formData.tag && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, tag: '' }))}
+                    className="absolute right-2 top-3 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                    title="清除文字"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 

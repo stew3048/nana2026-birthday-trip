@@ -68,7 +68,20 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
   boyfriendName = '蔡寶'
 }) => {
   const { isAuthorizedEditor, requireAuthOrPrompt, isBoyfriend, isGirlfriend } = useAuth();
-  const [snacks, setSnacks] = useState<SnackVoteItem[]>(() => DEFAULT_TAINAN_SNACKS.map(sanitizeSnack));
+  const [snacks, setSnacks] = useState<SnackVoteItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('qingbao_trip_snacks_cached_v3');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(sanitizeSnack);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return DEFAULT_TAINAN_SNACKS.map(sanitizeSnack);
+  });
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(true);
@@ -134,7 +147,23 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
             // ignore
           }
 
-          setSnacks(merged.map(sanitizeSnack));
+          setSnacks(prev => {
+            const now = Date.now();
+            const mergedWithLocal = merged.map(remote => {
+              const local = prev.find(p => p.id === remote.id);
+              if (!local) return remote;
+              const localUpdateTime = (local as any)._localVotedAt || 0;
+              // If local vote happened within 20 seconds, prioritize local state so it never reverts
+              if (now - localUpdateTime < 20000) {
+                return { ...remote, ...local, _localVotedAt: localUpdateTime };
+              }
+              return remote;
+            });
+            try {
+              localStorage.setItem('qingbao_trip_snacks_cached_v3', JSON.stringify(mergedWithLocal));
+            } catch (e) {}
+            return mergedWithLocal.map(sanitizeSnack);
+          });
           setIsFirebaseConnected(true);
         } catch (err) {
           console.warn('Error processing snacks update:', err);
@@ -170,7 +199,7 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
     const gfWants = nextGfVote === 'want' || nextGfVote === 'must';
     const bfWants = nextBfVote === 'want' || nextBfVote === 'must';
     
-    let computedVotedBy: 'qingbao' | 'caibao' | 'both' | undefined = undefined;
+    let computedVotedBy: 'qingbao' | 'caibao' | 'both' | null = null;
     let computedStatus: 'want' | 'must' | 'maybe' | 'pass' = newVote;
 
     if (gfWants && bfWants) {
@@ -185,10 +214,10 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
     } else {
       if (nextGfVote === 'maybe' || nextBfVote === 'maybe') {
         computedStatus = 'maybe';
-        computedVotedBy = nextGfVote === 'maybe' && nextBfVote === 'maybe' ? 'both' : (nextGfVote === 'maybe' ? 'qingbao' : 'caibao');
+        computedVotedBy = (nextGfVote === 'maybe' && nextBfVote === 'maybe') ? 'both' : (nextGfVote === 'maybe' ? 'qingbao' : 'caibao');
       } else {
         computedStatus = 'pass';
-        computedVotedBy = undefined;
+        computedVotedBy = null;
       }
     }
 
@@ -199,14 +228,18 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
     const updatedSnack: SnackVoteItem = {
       ...snack,
       status: computedStatus,
-      girlfriendVote: nextGfVote,
-      boyfriendVote: nextBfVote,
-      votedBy: computedVotedBy,
+      girlfriendVote: nextGfVote || null,
+      boyfriendVote: nextBfVote || null,
+      votedBy: computedVotedBy || undefined,
       likesCount
     };
+    (updatedSnack as any)._localVotedAt = Date.now();
 
     const updatedList = snacks.map(s => s.id === snack.id ? updatedSnack : s);
     setSnacks(updatedList);
+    try {
+      localStorage.setItem('qingbao_trip_snacks_cached_v3', JSON.stringify(updatedList));
+    } catch (e) {}
 
     if (newVote === 'want' || newVote === 'must') {
       confetti({
@@ -216,13 +249,13 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
       });
     }
 
-    // sync to Firebase
+    // sync to Firebase with sanitized fields (clean of undefined)
     setIsSyncing(true);
     await updateSnackVote(snack.id, {
       status: computedStatus,
-      girlfriendVote: nextGfVote,
-      boyfriendVote: nextBfVote,
-      votedBy: computedVotedBy,
+      girlfriendVote: nextGfVote || null,
+      boyfriendVote: nextBfVote || null,
+      votedBy: (computedVotedBy || null) as any,
       likesCount
     });
     setIsSyncing(false);
