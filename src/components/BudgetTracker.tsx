@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   DollarSign, 
   Plus, 
@@ -16,9 +16,16 @@ import {
   Layers,
   X,
   Check,
-  Calendar
+  Calendar,
+  RefreshCw,
+  Upload,
+  Download,
+  ShieldCheck,
+  AlertCircle,
+  FileText
 } from 'lucide-react';
 import { ExpenseItem } from '../types';
+import { scanAndRecoverUserExpenses, filterOutMockExpenses, isMockExpense } from '../utils/storage';
 
 interface BudgetTrackerProps {
   expenses: ExpenseItem[];
@@ -33,6 +40,133 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
   const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Recovery & Backup states
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importJsonText, setImportJsonText] = useState('');
+  const [restoreMessage, setRestoreMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Check if any mock items are currently in the list
+  const mockCount = expenses.filter(isMockExpense).length;
+
+  // Auto-scan on initial mount if list is currently empty
+  useEffect(() => {
+    if (expenses.length === 0) {
+      const res = scanAndRecoverUserExpenses();
+      if (res.found && res.recoveredExpenses.length > 0) {
+        onUpdateExpenses(res.recoveredExpenses);
+        setRestoreMessage({
+          type: 'success',
+          text: `🎉 系統已自動從本機歷程備份 (${res.sourceKey || '緩存'}) 為您找回 ${res.recoveredExpenses.length} 筆真實花費紀錄！`
+        });
+      }
+    }
+  }, []);
+
+  const handleScanAndRecover = () => {
+    setIsScanning(true);
+    setTimeout(() => {
+      const res = scanAndRecoverUserExpenses();
+      setIsScanning(false);
+      if (res.found && res.recoveredExpenses.length > 0) {
+        onUpdateExpenses(res.recoveredExpenses);
+        setRestoreMessage({
+          type: 'success',
+          text: `🎉 成功從本機備份 (${res.sourceKey || '歷史紀錄'}) 復原了 ${res.recoveredExpenses.length} 筆您先前記錄的花費！`
+        });
+      } else {
+        setRestoreMessage({
+          type: 'info',
+          text: '已完成深度掃描：目前瀏覽器暫存中未搜尋到未備份的舊記帳資料。已確認移除所有非您真實支出的虛擬範本。您可直接點擊「記下一筆支出」新增，或使用 JSON 檔案匯入。'
+        });
+      }
+    }, 300);
+  };
+
+  const handlePurgeMockExpenses = () => {
+    const cleaned = filterOutMockExpenses(expenses);
+    onUpdateExpenses(cleaned);
+    setRestoreMessage({
+      type: 'success',
+      text: `🧹 已為您清除所有非真實的示範虛擬開銷（共 ${mockCount} 筆）！`
+    });
+  };
+
+  const handleExportExpenses = () => {
+    try {
+      const dataStr = JSON.stringify(expenses, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `慶生行程花費記帳備份_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('匯出失敗，請手動複製記帳清單');
+    }
+  };
+
+  const handleImportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importJsonText.trim()) {
+      alert('請輸入或貼上 JSON 格式的記帳資料');
+      return;
+    }
+    try {
+      const parsed = JSON.parse(importJsonText);
+      let list: any[] = [];
+      if (Array.isArray(parsed)) {
+        list = parsed;
+      } else if (parsed && Array.isArray(parsed.expenses)) {
+        list = parsed.expenses;
+      } else {
+        alert('無效的記帳格式，需為包含花費項目的陣列或物件');
+        return;
+      }
+
+      const validItems: ExpenseItem[] = list
+        .filter(i => i && typeof i === 'object' && i.title)
+        .map((i, idx) => ({
+          id: i.id || `imported-${Date.now()}-${idx}`,
+          title: String(i.title).trim(),
+          amount: Number(i.amount) || 0,
+          category: i.category || 'other',
+          date: i.date || '2026-10-17',
+          currency: i.currency || 'TWD',
+          isPaidByBoyfriend: typeof i.isPaidByBoyfriend === 'boolean' ? i.isPaidByBoyfriend : true,
+          notes: i.notes || ''
+        }));
+
+      const cleanItems = filterOutMockExpenses(validItems);
+      onUpdateExpenses(cleanItems);
+      setIsImportModalOpen(false);
+      setImportJsonText('');
+      setRestoreMessage({
+        type: 'success',
+        text: `🎉 成功匯入並還原 ${cleanItems.length} 筆記帳紀錄！`
+      });
+    } catch (err: any) {
+      alert('JSON 解析失敗，請確認格式是否正確：' + err.message);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        setImportJsonText(content);
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const totalAmount = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const boyfriendPaidAmount = expenses
@@ -116,6 +250,51 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
   return (
     <div className="space-y-6 text-[var(--romantic-ink,#0F172A)]">
       
+      {/* Restore & Feedback Message */}
+      {restoreMessage && (
+        <div className={`p-4 rounded-2xl flex items-start justify-between gap-3 text-xs border animate-in fade-in duration-200 ${
+          restoreMessage.type === 'success'
+            ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+            : restoreMessage.type === 'error'
+            ? 'bg-rose-50 text-rose-900 border-rose-200'
+            : 'bg-sky-50 text-sky-900 border-sky-200'
+        }`}>
+          <div className="flex items-start space-x-2 min-w-0">
+            {restoreMessage.type === 'success' ? (
+              <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-sky-600 mt-0.5 shrink-0" />
+            )}
+            <span className="leading-relaxed">{restoreMessage.text}</span>
+          </div>
+          <button
+            onClick={() => setRestoreMessage(null)}
+            className="p-1 rounded-lg hover:bg-black/5 text-slate-500 cursor-pointer shrink-0"
+            aria-label="關閉訊息"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Mock template cleanup notice if any mock item is present */}
+      {mockCount > 0 && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              偵測到目前清單中含有 <strong>{mockCount}</strong> 筆系統自動產生的示範虛擬開銷（非您真實花費）。
+            </span>
+          </div>
+          <button
+            onClick={handlePurgeMockExpenses}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 transition-colors cursor-pointer shadow-xs"
+          >
+            🧹 一鍵清除示範虛擬開銷
+          </button>
+        </div>
+      )}
+
       {/* Overview Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
@@ -168,7 +347,7 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
 
       {/* Expenses Table / List */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[var(--romantic-border,#BAE6FD)] shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--romantic-ink,#0F172A)]">
               記帳明細列表
@@ -177,19 +356,81 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
               點擊鉛筆圖示即可隨時編輯修改項目名稱、金額、日期或備註
             </p>
           </div>
-          <button
-            onClick={handleOpenAdd}
-            className="px-3 py-1.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose-deep,#0369A1)] border border-[var(--romantic-border,#BAE6FD)] text-xs font-bold flex items-center space-x-1 hover:bg-sky-100 transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>新增</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleScanAndRecover}
+              disabled={isScanning}
+              title="深度掃描瀏覽器歷程備份，嘗試還原您先前輸入的花費"
+              className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center space-x-1 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">掃描還原</span>
+            </button>
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              title="匯入 JSON 格式的記帳資料備份檔"
+              className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center space-x-1 transition-colors cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">匯入</span>
+            </button>
+            {expenses.length > 0 && (
+              <button
+                onClick={handleExportExpenses}
+                title="下載備份花費記帳 JSON 檔案"
+                className="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center space-x-1 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">備份</span>
+              </button>
+            )}
+            <button
+              onClick={handleOpenAdd}
+              className="px-3.5 py-1.5 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose-deep,#0369A1)] border border-[var(--romantic-border,#BAE6FD)] text-xs font-bold flex items-center space-x-1 hover:bg-sky-100 transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>新增</span>
+            </button>
+          </div>
         </div>
 
         {expenses.length === 0 ? (
-          <div className="p-10 text-center text-[var(--romantic-muted,#64748B)] text-xs space-y-2">
-            <p className="text-2xl">🧾</p>
-            <p className="font-medium">目前還沒有記帳紀錄，點擊右上角新增第一筆花費吧！</p>
+          <div className="p-8 sm:p-10 text-center space-y-4">
+            <div className="w-14 h-14 rounded-3xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] flex items-center justify-center text-2xl mx-auto shadow-2xs">
+              🧾
+            </div>
+            <div className="max-w-md mx-auto space-y-1.5">
+              <h4 className="font-bold text-sm text-[var(--romantic-ink,#0F172A)]">
+                花費記帳已還原為乾淨清單
+              </h4>
+              <p className="text-xs text-[var(--romantic-muted,#64748B)] leading-relaxed">
+                先前系統更新時誤帶入的 8 筆預設範本（如煙波住宿9600、碳佐麻里4600等非您真正的開銷）已全數從雲端與本地清除。
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <button
+                onClick={handleScanAndRecover}
+                disabled={isScanning}
+                className="px-3.5 py-2 rounded-xl bg-[var(--romantic-rose,#0284C7)] hover:bg-[var(--romantic-rose-deep,#0369A1)] text-white font-bold text-xs flex items-center space-x-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
+                <span>{isScanning ? '正在掃描暫存...' : '🔍 掃描還原瀏覽器歷史花費'}</span>
+              </button>
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-[var(--romantic-ink,#0F172A)] border border-[var(--romantic-border,#BAE6FD)] font-bold text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5 text-slate-500" />
+                <span>📥 匯入 JSON 備份檔</span>
+              </button>
+              <button
+                onClick={handleOpenAdd}
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] font-bold text-xs flex items-center space-x-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>➕ 記下第一筆真實花費</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="divide-y divide-[var(--romantic-border,#BAE6FD)]">
@@ -444,6 +685,84 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Import JSON Modal */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-[var(--romantic-border,#BAE6FD)] max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-[var(--romantic-ink,#0F172A)]">
+            <div className="px-5 sm:px-6 py-4 border-b border-[var(--romantic-border,#BAE6FD)] flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] flex items-center justify-center text-base shadow-2xs">
+                  📥
+                </div>
+                <div>
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-[var(--romantic-ink,#0F172A)]">
+                    匯入記帳備份資料
+                  </h3>
+                  <p className="text-[11px] text-[var(--romantic-muted,#64748B)]">
+                    貼上 JSON 或選擇檔案還原先前儲存的花費
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsImportModalOpen(false); setImportJsonText(''); }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="關閉"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleImportSubmit} className="p-5 sm:p-6 space-y-4 flex-1 overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[var(--romantic-ink,#0F172A)]">
+                  貼上 JSON 內容或選擇檔案：
+                </label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs font-bold text-[var(--romantic-rose,#0284C7)] hover:underline flex items-center space-x-1 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>選擇本機 .json 檔</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </div>
+
+              <textarea
+                value={importJsonText}
+                onChange={(e) => setImportJsonText(e.target.value)}
+                placeholder='[&#10;  {&#10;    "title": "高鐵票",&#10;    "amount": 1350,&#10;    "category": "flight_transit",&#10;    "date": "2026-10-16",&#10;    "isPaidByBoyfriend": true&#10;  }&#10;]'
+                rows={8}
+                className="w-full p-3 font-mono text-xs rounded-xl border border-[var(--romantic-border,#BAE6FD)] bg-slate-50 focus:bg-white focus:outline-none focus:border-[var(--romantic-rose,#0284C7)]"
+              />
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsImportModalOpen(false); setImportJsonText(''); }}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 cursor-pointer"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl btn-romantic-primary text-white text-xs font-bold cursor-pointer shadow-md"
+                >
+                  確認匯入還原
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

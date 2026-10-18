@@ -185,24 +185,23 @@ export const LiveAlertModal: React.FC<LiveAlertModalProps> = ({
   const handleAcknowledge = () => {
     if (!current) return;
     const dismissedId = current.id;
-    const remaining = dueScenarios.filter(s => s.id !== dismissedId);
 
     // Call parent to dismiss current scenario
     onAcknowledgeScenario(dismissedId);
 
-    if (remaining.length === 0) {
-      // All due surprises are acknowledged, close modal and clear queue
-      try {
-        confetti.reset();
-      } catch (e) {}
-      onClose();
-    } else {
-      // Switch automatically to the previous unread surprise, or the first remaining
-      const curIdx = dueScenarios.findIndex(s => s.id === dismissedId);
-      const target = curIdx > 0 ? dueScenarios[curIdx - 1] : remaining[0];
-      setActiveTabScenario(target);
-      if (onSelectScenario) onSelectScenario(target);
+    // Also dismiss any currently queued scenarios so they don't repeatedly chain-pop
+    if (dueScenarios && dueScenarios.length > 0) {
+      dueScenarios.forEach(s => {
+        onAcknowledgeScenario(s.id);
+      });
     }
+
+    try {
+      confetti.reset();
+    } catch (e) {}
+    
+    // Close modal directly to prevent annoying repeated popups
+    onClose();
   };
 
   const getIcon = () => {
@@ -354,19 +353,13 @@ export const LiveAlertModal: React.FC<LiveAlertModalProps> = ({
                 </button>
               )}
 
-              {/* Primary Acknowledge Button: Dismisses current & shows previous unread */}
+              {/* Primary Acknowledge Button: Dismisses current & closes modal */}
               <button
                 onClick={handleAcknowledge}
                 className="px-4 sm:px-5 py-2.5 rounded-xl btn-romantic-primary text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center space-x-1 hover:scale-[1.02]"
-                title="確認閱讀，關閉當前驚喜並切換至上一則未讀"
+                title="確認閱讀，關閉當前驚喜"
               >
-                <span>
-                  {totalCount > 1 && currentIndex > 0
-                    ? '我知道了，看上一則 💖'
-                    : totalCount > 1
-                    ? '我知道了，看下一則 💖'
-                    : '我知道了，出發享受！💖'}
-                </span>
+                <span>我知道了，出發享受！💖</span>
               </button>
             </div>
           </div>

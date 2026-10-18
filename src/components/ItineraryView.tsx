@@ -73,11 +73,15 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   const { 
     isBoyfriend, 
     isGirlfriend, 
+    isAuthorizedEditor,
+    isGuest,
     role, 
     effectiveTime, 
     boyfriendForceUnlockAll,
     setBoyfriendForceUnlockAll
   } = useAuth();
+
+  const canEdit = isBoyfriend || isAuthorizedEditor; // 只有蔡寶管理者可以編輯！
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [unlockedActivityIds, setUnlockedActivityIds] = useState<string[]>([]);
@@ -502,15 +506,25 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                   <span>穿搭天氣：解鎖時揭曉</span>
                 </div>
 
-                {isBoyfriend && (
-                  <button
-                    onClick={() => setBoyfriendForceUnlockAll(true)}
-                    className="px-3 py-1.5 rounded-xl bg-[var(--romantic-gold-light,#FEF3C7)] hover:bg-[var(--romantic-gold-light,#FEF3C7)]/80 text-[var(--romantic-gold,#F59E0B)] border border-[var(--romantic-border,#BAE6FD)] text-xs font-bold flex items-center space-x-1 cursor-pointer transition-colors shadow-2xs"
-                    title="切換至管理員全解鎖模式，直接檢視與編輯完整主題文案"
-                  >
-                    <Unlock className="w-3.5 h-3.5" />
-                    <span>管理員全解鎖編輯</span>
-                  </button>
+                {canEdit && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setBoyfriendForceUnlockAll(true)}
+                      className="px-3 py-1.5 rounded-xl bg-[var(--romantic-gold-light,#FEF3C7)] hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold flex items-center space-x-1 cursor-pointer transition-colors shadow-2xs"
+                      title="切換至全解鎖模式，直接檢視與編輯完整主題文案"
+                    >
+                      <Unlock className="w-3.5 h-3.5 text-amber-700" />
+                      <span>全解鎖檢視</span>
+                    </button>
+                    <button
+                      onClick={handleOpenEditDayTheme}
+                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold flex items-center space-x-1 cursor-pointer transition-colors shadow-2xs"
+                      title="直接編輯此日主題標題與行程簡介文案"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-sky-600" />
+                      <span>✏️ 編輯行程簡介</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -557,14 +571,14 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                   </div>
                 )}
 
-                {isBoyfriend && (
+                {canEdit && (
                   <button
                     onClick={handleOpenEditDayTheme}
-                    className="p-2 rounded-xl bg-white hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-muted,#64748B)] hover:text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] text-xs flex items-center space-x-1 shadow-2xs cursor-pointer transition-colors"
-                    title="編輯此日主題與穿搭天氣"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-[var(--romantic-rose-light,#F0F9FF)] text-[var(--romantic-ink,#0F172A)] hover:text-[var(--romantic-rose,#0284C7)] border border-[var(--romantic-border,#BAE6FD)] text-xs flex items-center space-x-1.5 shadow-2xs cursor-pointer transition-colors font-semibold"
+                    title="編輯此日主題與當日簡介、穿搭天氣"
                   >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">編輯主題</span>
+                    <Edit3 className="w-3.5 h-3.5 text-[var(--romantic-rose,#0284C7)]" />
+                    <span>✏️ 編輯行程簡介與主題</span>
                   </button>
                 )}
               </div>
@@ -610,7 +624,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             <span>當日行程時間軸 ({currentDay?.activities.length || 0} 個項目)</span>
           </div>
 
-          {isBoyfriend && (
+          {canEdit && (
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleSortDayActivities}
@@ -841,8 +855,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                       )}
                     </div>
 
-                    {/* Right: Admin Action Buttons (Only for Boyfriend) */}
-                    {isBoyfriend && (
+                    {/* Right: Admin Action Buttons (For Authorized Editors) */}
+                    {canEdit && (
                       <div className="flex items-center space-x-1 sm:space-x-1.5 shrink-0 opacity-90 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleMoveActivity(index, 'up')}
@@ -1190,7 +1204,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-[var(--romantic-border,#BAE6FD)] max-h-[92vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <div className="px-5 sm:px-7 py-4 border-b border-[var(--romantic-border,#BAE6FD)] flex items-center justify-between shrink-0 bg-white">
               <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--romantic-ink,#0F172A)]">
-                ✏️ 編輯 Day {currentDay?.dayNumber} 主題與天氣
+                ✏️ 編輯 Day {currentDay?.dayNumber} 主題與當日行程簡介
               </h3>
               <button
                 type="button"
@@ -1266,9 +1280,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               <button
                 type="button"
                 onClick={handleSaveDayTheme}
-                className="px-5 py-2 rounded-xl btn-romantic-primary text-white text-xs font-medium cursor-pointer shadow-xs"
+                className="px-5 py-2 rounded-xl btn-romantic-primary text-white text-xs font-semibold cursor-pointer shadow-xs hover:shadow-md transition-all flex items-center space-x-1"
               >
-                儲存設定
+                <span>💾 儲存簡介與主題</span>
               </button>
             </div>
           </div>

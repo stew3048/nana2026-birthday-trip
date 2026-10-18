@@ -23,7 +23,8 @@ import { ThemeStudioView } from './components/ThemeStudioView';
 import { useAuth } from './context/AuthContext';
 import { subscribeToPhotos } from './lib/firebase';
 import { BirthdayTripData, ActivityItem, SurpriseItem, DayHighlightCard } from './types';
-import { loadTripData, saveTripData, syncTripToCloud, subscribeToTripFromCloud, fetchTripFromCloud } from './utils/storage';
+import { DEFAULT_DAY_HIGHLIGHTS } from './components/EditDayHighlightsModal';
+import { loadTripData, saveTripData, syncTripToCloud, subscribeToTripFromCloud, fetchTripFromCloud, clearActiveLiveAlertFromCloud, filterOutMockExpenses, scanAndRecoverUserExpenses } from './utils/storage';
 import { TIME_SIMULATOR_PRESETS, TimePreset, sortSurprisesByStartTime, sortScenariosByStartTime, extractScenarioDateTimeComponents, extractTimestampFromTiming } from './utils/timeLock';
 import { updateConsolidatedSurprises, getConsolidatedSurprises } from './utils/surpriseSync';
 import { getSynchronizedAlertScenarios } from './utils/alertScenariosSync';
@@ -31,7 +32,7 @@ import confetti from 'canvas-confetti';
 import { Heart, Sparkles, Gift, Bell, UtensilsCrossed, Stethoscope, Cake, Flame, Play, Star, Lock, CheckCircle2, RotateCcw, Plus, Edit3, Trash2, Eye, Clock } from 'lucide-react';
 
 export default function App() {
-  const { isBoyfriend, isGirlfriend, isAuthorizedEditor, isGuest, effectiveTime, simulatedTime, setSimulatedTime } = useAuth();
+  const { isBoyfriend, isGirlfriend, isAuthorizedEditor, isAuthorizedUser, isGuest, effectiveTime, simulatedTime, setSimulatedTime } = useAuth();
   const [tripData, setTripData] = useState<BirthdayTripData>(() => loadTripData());
   const [activeTab, setActiveTab] = useState<string>('home');
 
@@ -54,7 +55,7 @@ export default function App() {
   const [sentToast, setSentToast] = useState<string | null>(null);
 
   // Helper to check if a scenario trigger time is reached by effectiveTime
-  const isScenarioDue = (scenario: LiveAlertScenario, currentTime: Date, _isSimulating: boolean): boolean => {
+  const isScenarioDue = (scenario: LiveAlertScenario, currentTime: Date, isSimulating: boolean): boolean => {
     try {
       const parts = scenario.triggerTime.trim().split(' ');
       if (parts.length === 2) {
@@ -64,30 +65,77 @@ export default function App() {
         const trigDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
         
         const diffMs = currentTime.getTime() - trigDate.getTime();
-        return diffMs >= 0;
+        // If trigger time has not arrived yet, not due
+        if (diffMs < 0) return false;
+
+        // 1. Past Day check: If event was on an earlier date (e.g. 10/16 when currentTime is 10/17 or later),
+        // it must NEVER auto-pop an intrusive alert modal!
+        const currentYear = currentTime.getFullYear();
+        const currentMonth = currentTime.getMonth();
+        const currentDate = currentTime.getDate();
+        const trigDayStart = new Date(year, month - 1, day, 0, 0, 0, 0).getTime();
+        const currentDayStart = new Date(currentYear, currentMonth, currentDate, 0, 0, 0, 0).getTime();
+        if (currentDayStart > trigDayStart) {
+          return false;
+        }
+
+        // 2. Same Day elapsed check:
+        // When not simulating time, if the event was scheduled more than 30 minutes ago,
+        // it is already in the past and should not auto-pop an intrusive modal!
+        if (!isSimulating && diffMs > 30 * 60 * 1000) {
+          return false;
+        }
+
+        return true;
       }
     } catch (e) {}
     return false;
   };
 
-  // Track dismissed alerts in reactive state so UI immediately updates
+  // Persistent tracking of dismissed alerts in reactive state, localStorage, and cloud
   const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(() => {
+    const set = new Set<string>();
     try {
-      const saved = sessionStorage.getItem('qingbao_dismissed_alerts');
-      return new Set(saved ? JSON.parse(saved) : []);
-    } catch (e) {
-      return new Set();
-    }
+      const local = localStorage.getItem('qingbao_dismissed_alerts_v2');
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed)) parsed.forEach(id => set.add(id));
+      }
+      const session = sessionStorage.getItem('qingbao_dismissed_alerts');
+      if (session) {
+        const parsed = JSON.parse(session);
+        if (Array.isArray(parsed)) parsed.forEach(id => set.add(id));
+      }
+    } catch (e) {}
+    return set;
   });
 
   const markAlertDismissed = (alertId: string) => {
+    if (!alertId) return;
     setDismissedAlertIds(prev => {
       const next = new Set(prev);
       next.add(alertId);
       try {
+        localStorage.setItem('qingbao_dismissed_alerts_v2', JSON.stringify(Array.from(next)));
         sessionStorage.setItem('qingbao_dismissed_alerts', JSON.stringify(Array.from(next)));
       } catch (e) {}
       return next;
+    });
+
+    setTripData(prev => {
+      const currentList = prev.settings?.dismissedAlertIds || [];
+      if (!currentList.includes(alertId)) {
+        const updated = {
+          ...prev,
+          settings: {
+            ...prev.settings,
+            dismissedAlertIds: [...currentList, alertId]
+          }
+        };
+        saveTripData(updated);
+        return updated;
+      }
+      return prev;
     });
   };
 
@@ -122,177 +170,22 @@ export default function App() {
   const lastAutoPoppedScenarioIdRef = useRef<string | null>(null);
   const lastAutoPoppedAlertIdRef = useRef<string | null>(null);
 
-  // Reset confetti on mount in case of any lingering ribbon canvas & clear any stale active alerts & sync surprises
+  // Reset confetti on mount and clear stale broadcast alerts without mutating any user trip data
   useEffect(() => {
     try {
       confetti.reset();
     } catch (e) {}
 
-    // Comprehensive data sanitation to prevent stale/misaligned surprises
     setTripData(prev => {
-      let changed = false;
-      let newActiveLiveAlert = prev.activeLiveAlert;
-
-      // 1. Clean up stale or unwanted active live alerts (e.g., '請半天假' or '燒肉' or 00:00 midnight alert)
-      if (newActiveLiveAlert) {
-        const title = newActiveLiveAlert.title || '';
-        const sentTime = newActiveLiveAlert.sentAt ? new Date(newActiveLiveAlert.sentAt).getTime() : 0;
-        const isStale = !sentTime || (Date.now() - sentTime > 20 * 60 * 1000);
-        const isUnwanted = title.includes('請半天假') || title.includes('私心燒肉') || title.includes('壽星跨日整點') || newActiveLiveAlert.id === 'alert-1017-birthday';
-        if (isStale || isUnwanted) {
-          newActiveLiveAlert = undefined;
-          changed = true;
+      if (prev.activeLiveAlert) {
+        const sentTime = prev.activeLiveAlert.sentAt ? new Date(prev.activeLiveAlert.sentAt).getTime() : 0;
+        const isStale = !sentTime || (Date.now() - sentTime > 15 * 60 * 1000);
+        if (isStale) {
+          clearActiveLiveAlertFromCloud();
+          const updated = { ...prev, activeLiveAlert: undefined };
+          saveTripData(updated);
+          return updated;
         }
-      }
-
-      // 2. Filter out any '請半天假' or unwanted alerts from customAlertScenarios
-      let newCustomAlerts = prev.customAlertScenarios || [];
-      if (newCustomAlerts.some(s => s.title && (s.title.includes('請半天假') || s.title.includes('私心燒肉') || s.title.includes('壽星跨日整點')))) {
-        newCustomAlerts = newCustomAlerts.filter(s => !s.title.includes('請半天假') && !s.title.includes('私心燒肉') && !s.title.includes('壽星跨日整點'));
-        changed = true;
-      }
-
-      // 3. Ensure act-1-5 (三溫暖水療) is marked isSecretSurprise in itinerary
-      let newItinerary = prev.itinerary;
-      if (Array.isArray(newItinerary)) {
-        newItinerary = newItinerary.map(day => {
-          if (day.dayNumber === 1 && Array.isArray(day.activities)) {
-            const hasSpa = day.activities.some(a => a.id === 'act-1-5');
-            if (hasSpa) {
-              const updatedActivities = day.activities.map(a => {
-                if (a.id === 'act-1-5' && !a.isSecretSurprise) {
-                  changed = true;
-                  return { ...a, isSecretSurprise: true, surpriseHint: '晚上 20:30 煙波男女三溫暖水療放鬆泡湯 🧖‍♀️' };
-                }
-                return a;
-              });
-              return { ...day, activities: updatedActivities };
-            }
-          }
-          return day;
-        });
-      }
-
-      // 4. Sanitize surprises list (remove '請半天假', '燒肉', and midnight '跨日整點' surprise)
-      let updatedSurprises = [...(prev.surprises || [])];
-      
-      if (updatedSurprises.some(s => s.title.includes('請半天假') || s.title.includes('私心敲碗') || s.id === 'surp-6' || s.id === 'surp-3' || s.title.includes('壽星跨日整點'))) {
-        updatedSurprises = updatedSurprises.filter(s => !s.title.includes('請半天假') && !s.title.includes('私心敲碗') && s.id !== 'surp-6' && s.id !== 'surp-3' && !s.title.includes('壽星跨日整點'));
-        changed = true;
-      }
-
-      // Ensure surp-spa exists
-      if (!updatedSurprises.some(s => s.id === 'surp-spa' || s.activityId === 'act-1-5')) {
-        updatedSurprises.push({
-          id: 'surp-spa',
-          title: '🧖‍♀️ 煙波男女三溫暖水療放鬆 · 暖呼呼舒壓享受',
-          timing: 'Day 1 晚上 20:30',
-          location: '煙波大飯店 俱樂部設施',
-          description: '享受煙波著名的冷熱水療池、蒸氣室與烤箱，洗淨一週的工作疲倦，全身舒暢暖呼呼！',
-          isUnlocked: false,
-          unlockCode: '1017',
-          hint: '第一天晚上 20:30 煙波水療三溫暖放鬆 🧖‍♀️',
-          category: 'activity',
-          activityId: 'act-1-5',
-          dayNumber: 1,
-          sourceType: 'itinerary'
-        });
-        changed = true;
-      }
-
-      // Fix ID mapping mismatches and remove any forced 法式
-      updatedSurprises = updatedSurprises.map(s => {
-        let updated = s;
-        // Fix surp-2 (clinic) activityId to act-1-6
-        if (updated.id === 'surp-2' && updated.activityId !== 'act-1-6') {
-          changed = true;
-          updated = { ...updated, activityId: 'act-1-6', title: '🩺 深夜 23:00 密醫看診時間 · 蔡醫師專屬身心靈放鬆推拿' };
-        }
-        // Fix surp-4 (escape room) activityId to act-2-4
-        if (updated.id === 'surp-4' && updated.activityId !== 'act-2-4') {
-          changed = true;
-          updated = { ...updated, activityId: 'act-2-4', title: '🗝️ 密室逃脫通關特務挑戰 · 默契大考驗' };
-        }
-        // Fix surp-5 (dinner) activityId to act-2-5 and strip any lingering 法式
-        if (updated.id === 'surp-5' && (updated.activityId !== 'act-2-5' || updated.title.includes('法式'))) {
-          changed = true;
-          updated = {
-            ...updated,
-            activityId: 'act-2-5',
-            title: updated.title.replace(/法式浪漫奢華/g, '專屬浪漫').replace(/法式/g, '浪漫'),
-            location: updated.location.includes('法式') ? '台南精緻浪漫餐廳' : updated.location,
-            hint: updated.hint.includes('法式') ? '生日當晚的燭光浪漫慶生時刻 🕯️🎂' : updated.hint
-          };
-        }
-        if (updated.title && updated.title.includes('法式')) {
-          changed = true;
-          updated = {
-            ...updated,
-            title: updated.title.replace(/法式浪漫奢華/g, '專屬浪漫').replace(/法式/g, '浪漫')
-          };
-        }
-        return updated;
-      });
-
-      // Deduplicate surprises by ID and clean title to prevent duplicate entries
-      const uniqueSurprises: SurpriseItem[] = [];
-      const seenIds = new Set<string>();
-      const seenTitles = new Set<string>();
-      for (const s of updatedSurprises) {
-        if (!s || !s.title) continue;
-        const norm = s.title.replace(/^[\s\S]*?[🕯️🎂🍽️🧖‍♀️🩺🗝️✨💌🎁📸\s]+/u, '').trim().toLowerCase();
-        if (seenIds.has(s.id)) {
-          changed = true;
-          continue;
-        }
-        if (norm.length > 2 && seenTitles.has(norm)) {
-          changed = true;
-          continue;
-        }
-        seenIds.add(s.id);
-        if (norm.length > 2) seenTitles.add(norm);
-        uniqueSurprises.push(s);
-      }
-      updatedSurprises = uniqueSurprises;
-
-      // Also clean up any lingering 法式 or duplicates in standaloneSurprises
-      let updatedStandalone = prev.standaloneSurprises;
-      if (Array.isArray(updatedStandalone) && updatedStandalone.length > 0) {
-        const uniqueStandalone: SurpriseItem[] = [];
-        for (const s of updatedStandalone) {
-          if (!s || !s.title) continue;
-          const norm = s.title.replace(/^[\s\S]*?[🕯️🎂🍽️🧖‍♀️🩺🗝️✨💌🎁📸\s]+/u, '').trim().toLowerCase();
-          if (seenIds.has(s.id) || (norm.length > 2 && seenTitles.has(norm))) {
-            changed = true;
-            continue;
-          }
-          let cleanS = s;
-          if (cleanS.title.includes('法式')) {
-            changed = true;
-            cleanS = {
-              ...cleanS,
-              title: cleanS.title.replace(/法式浪漫奢華/g, '專屬浪漫').replace(/法式/g, '浪漫')
-            };
-          }
-          seenIds.add(cleanS.id);
-          if (norm.length > 2) seenTitles.add(norm);
-          uniqueStandalone.push(cleanS);
-        }
-        updatedStandalone = uniqueStandalone;
-      }
-
-      if (changed) {
-        const cleaned: BirthdayTripData = {
-          ...prev,
-          activeLiveAlert: newActiveLiveAlert,
-          customAlertScenarios: newCustomAlerts,
-          itinerary: newItinerary,
-          surprises: sortSurprisesByStartTime(updatedSurprises),
-          standaloneSurprises: updatedStandalone
-        };
-        saveTripData(cleaned);
-        syncTripToCloud(cleaned);
-        return cleaned;
       }
       return prev;
     });
@@ -336,18 +229,23 @@ export default function App() {
     }
   };
 
-  // Helper to check if a live alert is fresh (sent within 20 minutes) to avoid stale test popups
+  // Helper to check if a live alert is fresh (sent within 15 minutes) to avoid stale test popups
   const isLiveAlertRecent = (alert?: BirthdayTripData['activeLiveAlert']): boolean => {
     if (!alert?.id) return false;
-    if (alert.sentAt) {
-      const sentTime = new Date(alert.sentAt).getTime();
-      if (!isNaN(sentTime)) {
-        const diffMinutes = (Date.now() - sentTime) / (1000 * 60);
-        // If sent more than 20 minutes ago, it's stale and should not aggressively pop up
-        if (diffMinutes > 20) {
-          return false;
-        }
+    if (!alert.sentAt) return false;
+    // Do NOT show past alerts from 10/16 if we are past 10/16
+    if (alert.timeLabel?.includes('10/16')) {
+      const now = new Date();
+      if (now.getDate() > 16 || now.getMonth() > 9) {
+        return false;
       }
+    }
+    const sentTime = new Date(alert.sentAt).getTime();
+    if (isNaN(sentTime)) return false;
+    const diffMinutes = (Date.now() - sentTime) / (1000 * 60);
+    // If sent more than 15 minutes ago, it's stale and should not pop up
+    if (diffMinutes > 15 || diffMinutes < -1) {
+      return false;
     }
     return true;
   };
@@ -356,14 +254,73 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = subscribeToTripFromCloud((cloudData) => {
       if (cloudData && cloudData.settings) {
+        if (cloudData.settings.dismissedAlertIds && Array.isArray(cloudData.settings.dismissedAlertIds)) {
+          setDismissedAlertIds(prev => {
+            let hasNew = false;
+            const next = new Set(prev);
+            cloudData.settings?.dismissedAlertIds?.forEach(id => {
+              if (!next.has(id)) {
+                next.add(id);
+                hasNew = true;
+              }
+            });
+            if (hasNew) {
+              try {
+                localStorage.setItem('qingbao_dismissed_alerts_v2', JSON.stringify(Array.from(next)));
+              } catch (e) {}
+            }
+            return next;
+          });
+        }
+
         setTripData(prev => {
           // Robust merge: never let an outdated trip doc snapshot wipe out actively synced photos!
-          const mergedPhotos = (prev.photos && prev.photos.length > (cloudData.photos?.length || 0))
+          const hasRealPhotosInPrev = Array.isArray(prev.photos) && prev.photos.some(p => Boolean(p.imageUrl));
+          const mergedPhotos = hasRealPhotosInPrev
             ? prev.photos
             : (cloudData.photos && cloudData.photos.length > 0 ? cloudData.photos : prev.photos);
-          const updated = { ...cloudData, photos: mergedPhotos };
-          saveTripData(updated);
-          return updated;
+          
+          // Robust merge for expenses: Never let cloud mock template overwrite real user expenses!
+          const cleanCloudExpenses = filterOutMockExpenses(cloudData.expenses || []);
+          const cleanPrevExpenses = filterOutMockExpenses(prev.expenses || []);
+          let mergedExpenses = cleanPrevExpenses.length > 0 
+            ? cleanPrevExpenses 
+            : (cleanCloudExpenses.length > 0 ? cleanCloudExpenses : []);
+
+          if (mergedExpenses.length === 0) {
+            const recovered = scanAndRecoverUserExpenses();
+            if (recovered.found) {
+              mergedExpenses = recovered.recoveredExpenses;
+            }
+          }
+
+          // Check if local state has newer edits than incoming cloud snapshot
+          const prevTime = prev.cloudSyncedAt ? new Date(prev.cloudSyncedAt).getTime() : 0;
+          const cloudTime = cloudData.cloudSyncedAt ? new Date(cloudData.cloudSyncedAt).getTime() : 0;
+          const isLocalNewer = prevTime > cloudTime;
+
+          const mergedItinerary = isLocalNewer ? prev.itinerary : (cloudData.itinerary || prev.itinerary);
+          const mergedSettings = isLocalNewer ? prev.settings : {
+            ...cloudData.settings,
+            dayHighlights: (cloudData.settings?.dayHighlights && cloudData.settings.dayHighlights.length === 3)
+              ? cloudData.settings.dayHighlights
+              : (prev.settings?.dayHighlights || cloudData.settings?.dayHighlights)
+          };
+          const mergedDining = isLocalNewer ? prev.dining : (cloudData.dining || prev.dining);
+          const mergedPacking = isLocalNewer ? prev.packingList : (cloudData.packingList || prev.packingList);
+          const mergedLoveLetter = isLocalNewer ? prev.loveLetter : (cloudData.loveLetter || prev.loveLetter);
+
+          return { 
+            ...(isLocalNewer ? prev : cloudData),
+            settings: mergedSettings,
+            itinerary: mergedItinerary,
+            dining: mergedDining,
+            packingList: mergedPacking,
+            loveLetter: mergedLoveLetter,
+            photos: mergedPhotos,
+            expenses: mergedExpenses,
+            activeLiveAlert: cloudData.activeLiveAlert
+          };
         });
 
         // ONLY trigger alert modal for Girlfriend (Receiver), NOT for Boyfriend (Sender)
@@ -394,7 +351,7 @@ export default function App() {
       }
     });
     return () => unsubscribe();
-  }, [isBoyfriend, effectiveTime, simulatedTime, dismissedAlertIds]);
+  }, [isBoyfriend, dismissedAlertIds]);
 
   // 1b. Subscribe to Real-time Polaroid Photos Wall (Dedicated collection sync)
   useEffect(() => {
@@ -410,19 +367,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Auto-seed to fresh Firestore database when authorized user is logged in
-  useEffect(() => {
-    if (isAuthorizedEditor) {
-      fetchTripFromCloud().then(cloudData => {
-        if (!cloudData || !cloudData.settings || !cloudData.itinerary) {
-          console.log('Seeding initial trip data to fresh Firestore database...');
-          syncTripToCloud(tripData);
-        }
-      }).catch(err => {
-        console.warn('Auto cloud seed check notice:', err);
-      });
-    }
-  }, [isAuthorizedEditor, tripData]);
 
   // 2. Time-based Alert Trigger & Queue (For Girlfriend view / Time Simulator)
   useEffect(() => {
@@ -472,15 +416,30 @@ export default function App() {
     saveTripData(tripData);
   }, [tripData]);
 
-  // Acknowledge one scenario (Called when girlfriend clicks "我知道了")
+  // Acknowledge scenario (Called when girlfriend clicks "我知道了")
   const handleAcknowledgeScenario = (scenarioId: string) => {
     markAlertDismissed(scenarioId);
 
+    if (activeScenario?.id) {
+      markAlertDismissed(activeScenario.id);
+      lastAutoPoppedScenarioIdRef.current = activeScenario.id;
+    }
     if (tripData.activeLiveAlert?.id) {
       markAlertDismissed(tripData.activeLiveAlert.id);
+      lastAutoPoppedAlertIdRef.current = tripData.activeLiveAlert.id;
+    }
+    if (tripData.activeLiveAlert?.scenarioId) {
+      markAlertDismissed(tripData.activeLiveAlert.scenarioId);
     }
 
-    // Whenever girlfriend acknowledges, clear the active live broadcast from cloud and storage
+    // Immediately clear active live alert from Firestore Cloud
+    clearActiveLiveAlertFromCloud();
+
+    // Close the modal directly to guarantee it does not linger or chain-pop
+    setIsAlertModalOpen(false);
+    setActiveScenario(null);
+
+    // Also update local state
     if (tripData.activeLiveAlert) {
       const updated: BirthdayTripData = {
         ...tripData,
@@ -492,17 +451,21 @@ export default function App() {
     }
   };
 
-  // Close alert modal (Temporary close via 'X' or when queue is finished)
+  // Close alert modal (Temporary close via 'X')
   const handleCloseAlertModal = () => {
     try {
       confetti.reset();
     } catch (e) {}
     if (activeScenario) {
       markAlertDismissed(activeScenario.id);
+      lastAutoPoppedScenarioIdRef.current = activeScenario.id;
     }
     if (tripData.activeLiveAlert) {
       markAlertDismissed(tripData.activeLiveAlert.id);
-      // When girlfriend closes the modal via 'X', also clear the broadcast from cloud so it won't linger
+      if (tripData.activeLiveAlert.scenarioId) {
+        markAlertDismissed(tripData.activeLiveAlert.scenarioId);
+      }
+      clearActiveLiveAlertFromCloud();
       const updated: BirthdayTripData = {
         ...tripData,
         activeLiveAlert: undefined
@@ -793,8 +756,7 @@ export default function App() {
         customAlertScenarios: sortScenariosByStartTime(updatedCustom)
       };
 
-      saveTripData(updated);
-      syncTripToCloud(updated);
+      persistAndSync(updated);
       return updated;
     });
 
@@ -843,8 +805,7 @@ export default function App() {
         customAlertScenarios: updatedCustom
       };
 
-      saveTripData(updated);
-      syncTripToCloud(updated);
+      persistAndSync(updated);
       return updated;
     });
 
@@ -864,18 +825,34 @@ export default function App() {
     setIsAlertModalOpen(true);
   };
 
+  // Safe helper to persist data locally and sync with Firestore Cloud
+  const persistAndSync = (updated: BirthdayTripData) => {
+    try {
+      saveTripData(updated);
+    } catch (e) {
+      console.warn('localStorage save notice:', e);
+    }
+    syncTripToCloud(updated).catch(e => {
+      console.warn('Firestore cloud sync notice:', e);
+    });
+  };
+
   // Save editable day highlights
   const handleSaveDayHighlights = (highlights: DayHighlightCard[]) => {
-    const updated: BirthdayTripData = {
-      ...tripData,
-      settings: {
-        ...tripData.settings,
-        dayHighlights: highlights
-      }
-    };
-    setTripData(updated);
-    saveTripData(updated);
-    syncTripToCloud(updated);
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
+    setTripData(prev => {
+      updatedTrip = {
+        ...prev,
+        cloudSyncedAt: syncTimestamp,
+        settings: {
+          ...prev.settings,
+          dayHighlights: highlights
+        }
+      };
+      return updatedTrip;
+    });
+    persistAndSync(updatedTrip!);
     setSentToast('✨ 已成功儲存行程速覽文案！');
     setTimeout(() => setSentToast(null), 3500);
   };
@@ -899,89 +876,105 @@ export default function App() {
   };
 
   const handleUpdateItinerary = (newItinerary: BirthdayTripData['itinerary']) => {
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
     setTripData(prev => {
-      const intermediate = { ...prev, itinerary: newItinerary };
+      const intermediate = { ...prev, itinerary: newItinerary, cloudSyncedAt: syncTimestamp };
       const consolidated = getConsolidatedSurprises(intermediate);
-      const updated = {
+      updatedTrip = {
         ...intermediate,
         surprises: consolidated
       };
-      saveTripData(updated);
-      syncTripToCloud(updated);
-      return updated;
+      return updatedTrip;
     });
+    persistAndSync(updatedTrip!);
+    setSentToast('✨ 行程內容與簡介已成功儲存！');
+    setTimeout(() => setSentToast(null), 3500);
   };
 
   const handleUpdateSurprises = (newSurprises: BirthdayTripData['surprises']) => {
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
     setTripData(prev => {
-      const updated = updateConsolidatedSurprises(prev, newSurprises);
-      saveTripData(updated);
-      syncTripToCloud(updated);
-      return updated;
+      updatedTrip = {
+        ...updateConsolidatedSurprises(prev, newSurprises),
+        cloudSyncedAt: syncTimestamp
+      };
+      return updatedTrip;
     });
+    persistAndSync(updatedTrip!);
   };
 
   const handleUpdateDining = (newDining: BirthdayTripData['dining']) => {
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
     setTripData(prev => {
-      const updated = { ...prev, dining: newDining };
-      saveTripData(updated);
-      syncTripToCloud(updated);
-      return updated;
+      updatedTrip = { ...prev, dining: newDining, cloudSyncedAt: syncTimestamp };
+      return updatedTrip;
     });
+    persistAndSync(updatedTrip!);
+    setSentToast('✨ 餐廳訂位清單已儲存！');
+    setTimeout(() => setSentToast(null), 3000);
   };
 
   const handleUpdatePacking = (newPacking: BirthdayTripData['packingList']) => {
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
     setTripData(prev => {
-      const updated = { ...prev, packingList: newPacking };
-      saveTripData(updated);
-      syncTripToCloud(updated);
-      return updated;
+      updatedTrip = { ...prev, packingList: newPacking, cloudSyncedAt: syncTimestamp };
+      return updatedTrip;
     });
+    persistAndSync(updatedTrip!);
+    setSentToast('✨ 行李準備清單已儲存！');
+    setTimeout(() => setSentToast(null), 3000);
   };
 
   const handleUpdateExpenses = (newExpenses: BirthdayTripData['expenses']) => {
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
     setTripData(prev => {
-      const updated = { ...prev, expenses: newExpenses };
-      saveTripData(updated);
-      syncTripToCloud(updated);
-      return updated;
+      updatedTrip = { ...prev, expenses: newExpenses, cloudSyncedAt: syncTimestamp };
+      return updatedTrip;
     });
+    persistAndSync(updatedTrip!);
   };
 
   const handleUpdatePhotos = async (newPhotos: BirthdayTripData['photos']) => {
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
     setTripData(prev => {
-      const updated = { ...prev, photos: newPhotos };
-      saveTripData(updated);
-      return updated;
+      updatedTrip = { ...prev, photos: newPhotos, cloudSyncedAt: syncTimestamp };
+      return updatedTrip;
     });
-    try {
-      const fullUpdated = { ...tripData, photos: newPhotos };
-      await syncTripToCloud(fullUpdated);
-    } catch (e) {
-      console.warn('Sync trip with updated photos notice:', e);
-    }
+    persistAndSync(updatedTrip!);
   };
 
   const handleUpdateLoveLetter = (newLetter: BirthdayTripData['loveLetter']) => {
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
     setTripData(prev => {
-      const updated = { ...prev, loveLetter: newLetter };
-      saveTripData(updated);
-      syncTripToCloud(updated);
-      return updated;
+      updatedTrip = { ...prev, loveLetter: newLetter, cloudSyncedAt: syncTimestamp };
+      return updatedTrip;
     });
+    persistAndSync(updatedTrip!);
+    setSentToast('✨ 專屬情書內容已儲存！');
+    setTimeout(() => setSentToast(null), 3000);
   };
 
   const handleUpdateSettings = (newSettings: BirthdayTripData['settings']) => {
+    const syncTimestamp = new Date().toISOString();
+    let updatedTrip: BirthdayTripData;
     setTripData(prev => {
-      const updated = { ...prev, settings: newSettings };
-      saveTripData(updated);
-      syncTripToCloud(updated);
-      return updated;
+      updatedTrip = { ...prev, settings: newSettings, cloudSyncedAt: syncTimestamp };
+      return updatedTrip;
     });
+    persistAndSync(updatedTrip!);
+    setSentToast('✨ 旅程設定已成功儲存！');
+    setTimeout(() => setSentToast(null), 3500);
   };
 
   // Strict Gatekeeper: Block all views, tabs, surprises, and contents for unauthenticated guests
-  if (isGuest || !isAuthorizedEditor) {
+  if (isGuest || !isAuthorizedUser) {
     return <GuestGatekeeper tripData={tripData} />;
   }
 
@@ -1047,6 +1040,7 @@ export default function App() {
               onClearActiveAlert={handleClearActiveLiveAlert}
               sentAlertId={sentAlertId}
               onSaveDayHighlights={handleSaveDayHighlights}
+              onOpenSettings={() => setIsSettingsOpen(true)}
             />
           )}
 

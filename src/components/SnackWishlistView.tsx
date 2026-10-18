@@ -128,18 +128,40 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
       (items) => {
         try {
           const safeRemoteItems = (Array.isArray(items) ? items : []).map(sanitizeSnack);
-          let merged = safeRemoteItems;
+          
+          // Merge remote items with DEFAULT_TAINAN_SNACKS to ensure no default snacks are ever lost
+          const remoteMap = new Map(safeRemoteItems.map(item => [item.id, item]));
+          const baseDefaults = DEFAULT_TAINAN_SNACKS.map(def => {
+            const remote = remoteMap.get(def.id);
+            if (!remote) return def;
+            return {
+              ...def,
+              ...remote,
+              name: remote.name || def.name,
+              category: remote.category || def.category,
+              recommendedSpots: remote.recommendedSpots || def.recommendedSpots,
+              locationArea: remote.locationArea || def.locationArea,
+              notes: remote.notes || def.notes,
+            };
+          });
+
+          // Add any custom items from Firestore
+          const defaultIds = new Set(DEFAULT_TAINAN_SNACKS.map(d => d.id));
+          const remoteCustoms = safeRemoteItems.filter(item => !defaultIds.has(item.id));
+          let merged = [...baseDefaults, ...remoteCustoms];
+
+          // Also merge locally cached custom snacks fallback
           try {
             const cached = localStorage.getItem('qingbao_trip_custom_snacks_fallback');
             if (cached) {
               const parsed = JSON.parse(cached);
               if (Array.isArray(parsed) && parsed.length > 0) {
                 const safeParsed = parsed.map(sanitizeSnack);
-                const remoteIds = new Set(safeRemoteItems.map(p => p.id));
-                const remoteNames = new Set(safeRemoteItems.map(p => (p.name || '').trim().toLowerCase()).filter(Boolean));
-                const unmerged = safeParsed.filter(p => !remoteIds.has(p.id) && !remoteNames.has((p.name || '').trim().toLowerCase()));
+                const currentIds = new Set(merged.map(p => p.id));
+                const currentNames = new Set(merged.map(p => (p.name || '').trim().toLowerCase()).filter(Boolean));
+                const unmerged = safeParsed.filter(p => !currentIds.has(p.id) && !currentNames.has((p.name || '').trim().toLowerCase()));
                 if (unmerged.length > 0) {
-                  merged = [...unmerged, ...safeRemoteItems];
+                  merged = [...unmerged, ...merged];
                 }
               }
             }
@@ -153,8 +175,8 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
               const local = prev.find(p => p.id === remote.id);
               if (!local) return remote;
               const localUpdateTime = (local as any)._localVotedAt || 0;
-              // If local vote happened within 20 seconds, prioritize local state so it never reverts
-              if (now - localUpdateTime < 20000) {
+              // If local vote happened within 60 seconds, prioritize local state so it never reverts
+              if (now - localUpdateTime < 60000) {
                 return { ...remote, ...local, _localVotedAt: localUpdateTime };
               }
               return remote;
@@ -249,9 +271,14 @@ export const SnackWishlistView: React.FC<SnackWishlistViewProps> = ({
       });
     }
 
-    // sync to Firebase with sanitized fields (clean of undefined)
+    // sync to Firebase with full item data and sanitized fields (clean of undefined)
     setIsSyncing(true);
     await updateSnackVote(snack.id, {
+      name: snack.name,
+      category: snack.category,
+      recommendedSpots: snack.recommendedSpots,
+      locationArea: snack.locationArea,
+      notes: snack.notes,
       status: computedStatus,
       girlfriendVote: nextGfVote || null,
       boyfriendVote: nextBfVote || null,

@@ -15,6 +15,7 @@ interface AuthContextType {
   isActualBoyfriend: boolean;
   isActualGirlfriend: boolean;
   isAuthorizedEditor: boolean;
+  isAuthorizedUser: boolean;
   isUnauthorized: boolean;
   canToggleRole: boolean;
   defaultBoyfriendEmail: string;
@@ -187,8 +188,9 @@ export const AuthProvider: React.FC<{
   // Strict check: only exact email matches are authorized
   const isActualBoyfriend = isLoggedIn && (lowerUserEmail === bfEmail || lowerUserEmail === BOYFRIEND_DEFAULT_EMAIL);
   const isActualGirlfriend = isLoggedIn && (lowerUserEmail === gfEmail || lowerUserEmail === GIRLFRIEND_DEFAULT_EMAIL);
-  const isAuthorizedEditor = isActualBoyfriend || isActualGirlfriend;
-  const isUnauthorized = isLoggedIn && !isAuthorizedEditor;
+  const isAuthorizedEditor = isActualBoyfriend; // Strictly only 蔡寶 (administrator) can edit!
+  const isAuthorizedUser = isActualBoyfriend || isActualGirlfriend;
+  const isUnauthorized = isLoggedIn && !isAuthorizedUser;
 
   // Role permissions:
   // - stew3048@gmail.com: can see both boyfriend and girlfriend perspectives
@@ -422,6 +424,7 @@ export const AuthProvider: React.FC<{
         isActualBoyfriend,
         isActualGirlfriend,
         isAuthorizedEditor,
+        isAuthorizedUser,
         isUnauthorized,
         canToggleRole,
         defaultBoyfriendEmail,

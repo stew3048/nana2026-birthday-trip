@@ -8,12 +8,14 @@ interface HeroCountdownProps {
   settings: TripSettings;
   onOpenLoveLetter: () => void;
   onTriggerSurpriseModal: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const HeroCountdown: React.FC<HeroCountdownProps> = ({
   settings,
   onOpenLoveLetter,
   onTriggerSurpriseModal,
+  onOpenSettings
 }) => {
   const { effectiveTime } = useAuth();
   const [timeLeft, setTimeLeft] = useState<{
@@ -105,20 +107,31 @@ export const HeroCountdown: React.FC<HeroCountdownProps> = ({
 
         {/* Main Hero Title */}
         <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4 leading-tight flex flex-col items-center">
-          <span>晴寶 2026 生日</span>
-          <span className="text-[#F5D5CE] text-2xl sm:text-4xl lg:text-5xl mt-1">專屬台南之旅</span>
+          <span>{settings.tripTitle || `${settings.girlfriendName || '晴寶'} 2026 生日`}</span>
+          <span className="text-[#F5D5CE] text-2xl sm:text-4xl lg:text-5xl mt-1">
+            {settings.destination ? `專屬${settings.destination}之旅` : '專屬台南之旅'}
+          </span>
         </h1>
 
         {/* Destination and Date Subtitle */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[#EBDDCF] text-sm sm:text-base mb-8">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[#EBDDCF] text-sm sm:text-base mb-6">
           <div className="flex items-center space-x-1.5 bg-[#1F1714]/60 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/10">
             <MapPin className="w-4 h-4 text-[#C5A059]" />
-            <span>目的地：{settings.destination}</span>
+            <span>目的地：{settings.destination || '台南'}</span>
           </div>
           <div className="flex items-center space-x-1.5 bg-[#1F1714]/60 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/10">
             <Calendar className="w-4 h-4 text-[#BA5444]" />
             <span>啟程日期：{settings.startDate} ~ {settings.endDate}</span>
           </div>
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/90 hover:text-white border border-white/20 text-xs font-medium transition-colors cursor-pointer flex items-center space-x-1"
+              title="編輯旅行標題、目的地與基本設定"
+            >
+              <span>⚙️ 編輯旅程設定</span>
+            </button>
+          )}
         </div>
 
         {/* Live Countdown Box */}

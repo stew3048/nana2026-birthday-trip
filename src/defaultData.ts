@@ -16,8 +16,36 @@ export const tainanBirthdayPreset: BirthdayTripData = {
     romanticThemeColor: 'rose',
     secretModePassword: '1017',
     boyfriendEmail: 'stew3048@gmail.com',
-    girlfriendEmail: 'sng828388@gmail.com',
-    customNotes: '親愛的晴寶，祝妳 10/17 生日快樂！這次 3 天 2 夜台南之旅全程為妳量身打造，蔡寶專屬司機＋攝影師＋專屬密醫為您服務～'
+    customNotes: '親愛的晴寶，祝妳 10/17 生日快樂！這次 3 天 2 夜台南之旅全程為妳量身打造，蔡寶專屬司機＋攝影師＋專屬密醫為您服務～',
+    dayHighlights: [
+      {
+        dayNumber: 1,
+        dateBadge: 'Day 1 · 10/16 (五)',
+        title: '奔向府城 · 逃離日常的溫柔序曲',
+        description: '放下所有工作與繁忙，坐在副駕只管放空聽歌。今晚沒有趕路的壓力，只有專屬我們的愜意節奏與溫暖夜色，為這趟慶生之旅揭開最放鬆的序幕。',
+        tag1: '🚗 甜蜜啟程',
+        tag2: '✨ 極致放鬆夜',
+        isSecretSurprise: false
+      },
+      {
+        dayNumber: 2,
+        dateBadge: '⭐ Day 2 · 10/17 (六) 晴寶生日',
+        title: '🎂 晴寶生日大日子 · 今天妳是全世界最幸福的女孩',
+        description: '祝我最心愛的晴寶生日快樂！今天所有的時光與溫柔都只為妳一個人準備。放下所有安排，只要帶著最甜美的笑容，跟著蔡司機一起迎接滿滿的專屬寵溺與走心心動驚喜！',
+        tag1: '👑 壽星專屬特權',
+        tag2: '🔒 走心神秘驚喜',
+        isSecretSurprise: true
+      },
+      {
+        dayNumber: 3,
+        dateBadge: 'Day 3 · 10/18 (日)',
+        title: '🌿 慢調漫步 · 把所有心動與美味悄悄珍藏',
+        description: '睡得好嗎？悠閒退房後，牽著手漫步在府城的溫煦陽光下。與最重要的人好好吃頓暖心好飯、探索充滿驚喜的美好角落，最後帶著滿載的幸福回憶與笑容，一起牽手平安回家。',
+        tag1: '🕊️ 暖心慢活步調',
+        tag2: '💖 滿載笑容賦歸',
+        isSecretSurprise: false
+      }
+    ]
   },
   itinerary: [
     {
@@ -86,8 +114,8 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       id: 'day-2',
       dayNumber: 2,
       date: '2026-10-17',
-      themeTitle: 'Day 2 (六): 🎂 晴寶專屬生日大日子！水療手作、密室逃脫與專屬慶生盛宴',
-      dayDescription: '晴寶生日當天！享用煙波豐盛早餐、飯店健身房運動、密室逃脫默契挑戰、泳池放鬆，晚上享用走心慶生晚餐，床頭送上驚喜大禮！',
+      themeTitle: 'Day 2 (六): 🎂 晴寶專屬生日大日子！煙波早堂、露天泳池放鬆 ＆ 專屬神秘慶生驚喜',
+      dayDescription: '晴寶生日當天！早晨在煙波享用豐盛早堂早餐與運動，午後露天水療泳池玩水放空拍仙氣美照；全天穿插蔡寶精心準備的神秘冒險與走心慶生晚餐，等壽星晴寶親自甜蜜解鎖！',
       weatherForecast: '陽光明媚 27°C / 最適合慶生拍照',
       todayOutfitTip: '早上運動與泳裝玩水，午後換上晴寶最仙氣的生日小禮服/漂亮洋裝，今晚是妳最美的主場！',
       activities: [
@@ -159,8 +187,8 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       id: 'day-3',
       dayNumber: 3,
       date: '2026-10-18',
-      themeTitle: 'Day 3 (日): 🍜 晴寶小吃票選巡禮 · 奇美木乃伊VR科技展 ·',
-      dayDescription: '要睡飽還是台南美食巡禮都可以！下午奇美博物館埃及木乃伊展與沉浸式 VR，心滿意足回台中！',
+      themeTitle: 'Day 3 (日): 🏛️ 靜日初暖心好飯 · 奇美木乃伊VR展 · Pankoko頂級和牛燒肉',
+      dayDescription: '退房後前往靜日初享用暖心好飯；下午走訪奇美博物館探索埃及木乃伊展與沉浸式VR科技體驗；傍晚大啖蔡寶心心念念的Pankoko頂級燒肉，帶著滿滿回憶平安回程台中！',
       weatherForecast: '秋高氣爽 26°C / 完美出遊日',
       todayOutfitTip: '知性休閒氣質風，適合在奇美博物館戶外阿波羅噴泉與館內拍美照。',
       activities: [
@@ -417,85 +445,7 @@ export const tainanBirthdayPreset: BirthdayTripData = {
       isSweetheartSpecial: false
     }
   ],
-  expenses: [
-    {
-      id: 'exp-1',
-      title: '台南煙波大飯店 尊榮客房 2 晚 (含雙人早餐 & 三溫暖泳池)',
-      category: 'hotel',
-      amount: 9600,
-      currency: 'TWD',
-      date: '2026-09-10',
-      isPaidByBoyfriend: true,
-      notes: '10/16~10/18 兩晚住宿，蔡寶全額支付'
-    },
-    {
-      id: 'exp-2',
-      title: '煙波大飯店 隱糧義式雙人晚餐 (Day 1)',
-      category: 'food',
-      amount: 2200,
-      currency: 'TWD',
-      date: '2026-10-16',
-      isPaidByBoyfriend: true
-    },
-    {
-      id: 'exp-3',
-      title: '台南手作皮革體驗 雙人課程費用 (Day 2)',
-      category: 'tickets',
-      amount: 1800,
-      currency: 'TWD',
-      date: '2026-09-20',
-      isPaidByBoyfriend: true,
-      notes: '親手敲製專屬紀念皮革'
-    },
-    {
-      id: 'exp-4',
-      title: '台南密室逃脫 雙人挑戰門票 (Day 2)',
-      category: 'tickets',
-      amount: 1400,
-      currency: 'TWD',
-      date: '2026-09-22',
-      isPaidByBoyfriend: true
-    },
-    {
-      id: 'exp-5',
-      title: '晴寶生日奢華浪漫雙人晚餐 ＆ 客製蛋糕 (Day 2)',
-      category: 'food',
-      amount: 5800,
-      currency: 'TWD',
-      date: '2026-10-17',
-      isPaidByBoyfriend: true,
-      notes: '10/17 晴寶生日大餐'
-    },
-    {
-      id: 'exp-6',
-      title: '奇美博物館 雙人門票 ＆ 埃及特展沉浸式 VR 體驗 (Day 3)',
-      category: 'tickets',
-      amount: 1200,
-      currency: 'TWD',
-      date: '2026-09-25',
-      isPaidByBoyfriend: true
-    },
-    {
-      id: 'exp-7',
-      title: '碳佐麻里 精品燒肉 A5 和牛大餐 (Day 3 蔡寶私心燒肉)',
-      category: 'food',
-      amount: 4600,
-      currency: 'TWD',
-      date: '2026-10-18',
-      isPaidByBoyfriend: true,
-      notes: '旅程完美結尾盛宴'
-    },
-    {
-      id: 'exp-8',
-      title: '秘密生日禮物 ＆ 精美手寫卡片',
-      category: 'gifts',
-      amount: 8800,
-      currency: 'TWD',
-      date: '2026-10-10',
-      isPaidByBoyfriend: true,
-      notes: '晴寶夢寐以求的心願禮物 🎁'
-    }
-  ],
+  expenses: [],
   photos: [
     {
       id: 'photo-1',

@@ -139,6 +139,7 @@ export interface TripSettings {
   girlfriendEmail?: string;
   dayHighlights?: DayHighlightCard[];
   hiddenScenarioIds?: string[];
+  dismissedAlertIds?: string[];
 }
 
 export interface SnackVoteItem {
@@ -185,6 +186,8 @@ export interface LiveAlertScenario {
 
 export interface BirthdayTripData {
   version: string;
+  cloudSyncedAt?: string;
+  lastUpdatedBy?: string;
   settings: TripSettings;
   itinerary: DayItinerary[];
   surprises: SurpriseItem[];

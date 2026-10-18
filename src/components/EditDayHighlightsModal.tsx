@@ -14,28 +14,28 @@ export const DEFAULT_DAY_HIGHLIGHTS: DayHighlightCard[] = [
   {
     dayNumber: 1,
     dateBadge: 'Day 1 · 10/16 (五)',
-    title: '奔向府城 · 煙波入住 ＆ 極致放鬆夜',
-    description: '蔡寶請半天假南下，入住煙波大飯店、享用浪漫晚餐，三溫暖與深夜甜蜜放鬆互動。',
-    tag1: '15:00 ~ 深夜',
-    tag2: '煙波大飯店 質感入住',
+    title: '奔向府城 · 逃離日常的溫柔序曲',
+    description: '放下所有工作與繁忙，坐在副駕只管放空聽歌。今晚沒有趕路的壓力，只有專屬我們的愜意節奏與溫暖夜色，為這趟慶生之旅揭開最放鬆的序幕。',
+    tag1: '🚗 甜蜜啟程',
+    tag2: '✨ 極致放鬆夜',
     isSecretSurprise: false
   },
   {
     dayNumber: 2,
     dateBadge: '⭐ Day 2 · 10/17 (六) 晴寶生日',
-    title: '晴寶生日大日子 · 默契冒險 ＆ 神秘浪漫盛典',
-    description: '整點慶生與專屬手寫信，下午特務默契通關，晚間精心預約神秘浪漫驚喜，為晴寶獻上最特別的生日祝福！',
-    tag1: '全天候專屬寵愛',
-    tag2: '專屬生日驚喜',
+    title: '🎂 晴寶生日大日子 · 今天妳是全世界最幸福的女孩',
+    description: '祝我最心愛的晴寶生日快樂！今天所有的時光與溫柔都只為妳一個人準備。放下所有安排，只要帶著最甜美的笑容，跟著蔡司機一起迎接滿滿的專屬寵溺與走心心動驚喜！',
+    tag1: '👑 壽星專屬特權',
+    tag2: '🔒 走心神秘驚喜',
     isSecretSurprise: true
   },
   {
     dayNumber: 3,
     dateBadge: 'Day 3 · 10/18 (日)',
-    title: '早午餐悠閒漫遊 · 府城漫步與壓軸驚喜',
-    description: '睡到自然醒享用精緻早午餐，安平悠閒逛街伴手禮，為三天兩夜甜蜜旅程寫下最幸福句點。',
-    tag1: '悠閒府城散策',
-    tag2: '帶著滿滿回憶歸賦',
+    title: '🌿 慢調漫步 · 把所有心動與美味悄悄珍藏',
+    description: '睡得好嗎？悠閒退房後，牽著手漫步在府城的溫煦陽光下。與最重要的人好好吃頓暖心好飯、探索充滿驚喜的美好角落，最後帶著滿載的幸福回憶與笑容，一起牽手平安回家。',
+    tag1: '🕊️ 暖心慢活步調',
+    tag2: '💖 滿載笑容賦歸',
     isSecretSurprise: false
   }
 ];
@@ -57,9 +57,20 @@ export const EditDayHighlightsModal: React.FC<EditDayHighlightsModalProps> = ({
     return JSON.parse(JSON.stringify(DEFAULT_DAY_HIGHLIGHTS));
   });
 
+  // Re-sync with latest highlights whenever modal opens or dayHighlights updates
+  React.useEffect(() => {
+    if (isOpen) {
+      if (dayHighlights && dayHighlights.length === 3) {
+        setCards(JSON.parse(JSON.stringify(dayHighlights)));
+      } else {
+        setCards(JSON.parse(JSON.stringify(DEFAULT_DAY_HIGHLIGHTS)));
+      }
+    }
+  }, [isOpen, dayHighlights]);
+
   if (!isOpen) return null;
 
-  const currentCard = cards[selectedDayIdx];
+  const currentCard = cards[selectedDayIdx] || cards[0] || DEFAULT_DAY_HIGHLIGHTS[0];
 
   const handleUpdateCurrentCard = (field: keyof DayHighlightCard, value: any) => {
     setCards(prev => {

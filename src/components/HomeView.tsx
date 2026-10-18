@@ -41,6 +41,7 @@ interface HomeViewProps {
   onClearActiveAlert?: () => void;
   sentAlertId: string | null;
   onSaveDayHighlights: (highlights: DayHighlightCard[]) => void;
+  onOpenSettings?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -55,9 +56,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onResetAlerts,
   onClearActiveAlert,
   sentAlertId,
-  onSaveDayHighlights
+  onSaveDayHighlights,
+  onOpenSettings
 }) => {
-  const { isBoyfriend } = useAuth();
+  const { isBoyfriend, isAuthorizedEditor, isGuest } = useAuth();
+  const canEdit = isBoyfriend || isAuthorizedEditor; // 只有蔡寶管理者可以編輯！
   const [isEditingHighlightsOpen, setIsEditingHighlightsOpen] = useState(false);
 
   // Statistics for quick widgets
@@ -68,8 +71,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
     s => s.status === 'must' || s.girlfriendVote === 'must' || s.boyfriendVote === 'must'
   ).length;
 
-  const currentHighlights: DayHighlightCard[] = tripData.settings.dayHighlights && tripData.settings.dayHighlights.length === 3
-    ? tripData.settings.dayHighlights
+  const rawHighlights = tripData.settings.dayHighlights;
+  const currentHighlights: DayHighlightCard[] = (rawHighlights && rawHighlights.length === 3)
+    ? rawHighlights
     : DEFAULT_DAY_HIGHLIGHTS;
 
   return (
@@ -214,6 +218,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         settings={tripData.settings}
         onOpenLoveLetter={onOpenLoveLetter}
         onTriggerSurpriseModal={onTriggerSurpriseModal}
+        onOpenSettings={onOpenSettings}
       />
 
       {/* 3. Trip Overview Cards & Quick Navigators */}
@@ -222,15 +227,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div>
             <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--romantic-ink,#0F172A)] flex items-center space-x-2">
               <Calendar className="w-5 h-5 text-[var(--romantic-rose,#0284C7)]" />
-              <span>台南 3 天 2 夜專屬行程速覽</span>
+              <span>{tripData.settings.tripTitle ? `${tripData.settings.tripTitle} · 3天2夜專屬行程速覽` : '台南 3 天 2 夜專屬行程速覽'}</span>
             </h3>
             <p className="text-xs text-[var(--romantic-muted,#64748B)] mt-0.5">
-              10/16 ~ 10/18 · 煙波大飯店 ＆ 10/17 晴寶生日大日子
+              {tripData.settings.startDate || '10/16'} ~ {tripData.settings.endDate || '10/18'} · {tripData.settings.destination || '台南煙波大飯店'} ＆ 10/17 晴寶生日大日子
             </p>
           </div>
 
           <div className="flex items-center space-x-2">
-            {isBoyfriend && (
+            {canEdit && (
               <button
                 onClick={() => setIsEditingHighlightsOpen(true)}
                 className="px-3.5 py-1.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 hover:text-[var(--romantic-rose,#0284C7)] border border-slate-200 hover:border-[var(--romantic-border,#BAE6FD)] text-xs font-bold shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
